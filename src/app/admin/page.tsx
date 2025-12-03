@@ -107,14 +107,12 @@ export default function AdminPage() {
     return grouped;
   };
 
-  const calculateAverageScore = (evals: Evaluation[]) => {
-    if (evals.length === 0) return 0;
-    const total = evals.reduce(
+  const getTotalFeedbackCount = (evals: Evaluation[]) => {
+    return evals.reduce(
       (sum, e) =>
-        sum + e.content_score + e.delivery_score + e.language_score + e.time_score + e.overall_score,
+        sum + (e.commend_tags?.length || 0) + (e.recommend_tags?.length || 0) + (e.challenge_tags?.length || 0),
       0
     );
-    return (total / (evals.length * 5)).toFixed(1);
   };
 
   const exportToCSV = () => {
@@ -124,13 +122,9 @@ export default function AdminPage() {
       'Speaker',
       'Evaluator',
       'Type',
-      'Content',
-      'Delivery',
-      'Language',
-      'Time',
-      'Overall',
-      'Strengths',
-      'Improvements',
+      'Commend',
+      'Recommend',
+      'Challenge',
       'Comments',
     ];
 
@@ -138,13 +132,9 @@ export default function AdminPage() {
       e.speaker_name,
       e.evaluator_name,
       SPEECH_TYPES[e.speech_type as keyof typeof SPEECH_TYPES],
-      e.content_score,
-      e.delivery_score,
-      e.language_score,
-      e.time_score,
-      e.overall_score,
-      `"${e.strengths?.replace(/"/g, '""') || ''}"`,
-      `"${e.improvements?.replace(/"/g, '""') || ''}"`,
+      `"${(e.commend_tags || []).join('; ')}"`,
+      `"${(e.recommend_tags || []).join('; ')}"`,
+      `"${(e.challenge_tags || []).join('; ')}"`,
       `"${e.comments?.replace(/"/g, '""') || ''}"`,
     ]);
 
@@ -288,8 +278,7 @@ export default function AdminPage() {
                           <div>
                             <h3 className="font-semibold text-gray-800">{speaker}</h3>
                             <p className="text-sm text-gray-500">
-                              {evals.length} evaluation{evals.length > 1 ? 's' : ''} • Avg:{' '}
-                              {calculateAverageScore(evals)}/5
+                              {evals.length} evaluation{evals.length > 1 ? 's' : ''} • {getTotalFeedbackCount(evals)} feedback items
                             </p>
                           </div>
                           <div className="text-sm text-gray-500">
@@ -308,47 +297,51 @@ export default function AdminPage() {
                                 </div>
                               </div>
 
-                              {/* Scores Grid */}
-                              <div className="grid grid-cols-5 gap-2 mb-3">
-                                {[
-                                  { label: 'Content', score: evaluation.content_score },
-                                  { label: 'Delivery', score: evaluation.delivery_score },
-                                  { label: 'Language', score: evaluation.language_score },
-                                  { label: 'Time', score: evaluation.time_score },
-                                  { label: 'Overall', score: evaluation.overall_score },
-                                ].map((item) => (
-                                  <div key={item.label} className="text-center">
-                                    <div className="text-xs text-gray-500">{item.label}</div>
-                                    <div
-                                      className={`font-bold ${
-                                        item.score >= 4
-                                          ? 'text-green-600'
-                                          : item.score >= 3
-                                          ? 'text-yellow-600'
-                                          : 'text-red-600'
-                                      }`}
-                                    >
-                                      {item.score}
-                                    </div>
+                              {/* Commend Tags */}
+                              {evaluation.commend_tags && evaluation.commend_tags.length > 0 && (
+                                <div className="mb-2">
+                                  <div className="text-xs font-medium text-green-700 mb-1">Commend:</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {evaluation.commend_tags.map((tag, i) => (
+                                      <span key={i} className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
+                                        {tag}
+                                      </span>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              )}
 
-                              {/* Feedback */}
-                              {evaluation.strengths && (
+                              {/* Recommend Tags */}
+                              {evaluation.recommend_tags && evaluation.recommend_tags.length > 0 && (
                                 <div className="mb-2">
-                                  <span className="text-xs font-medium text-green-700">Strengths: </span>
-                                  <span className="text-sm text-gray-600">{evaluation.strengths}</span>
+                                  <div className="text-xs font-medium text-yellow-700 mb-1">Recommend:</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {evaluation.recommend_tags.map((tag, i) => (
+                                      <span key={i} className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full">
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
-                              {evaluation.improvements && (
+
+                              {/* Challenge Tags */}
+                              {evaluation.challenge_tags && evaluation.challenge_tags.length > 0 && (
                                 <div className="mb-2">
-                                  <span className="text-xs font-medium text-orange-700">To Improve: </span>
-                                  <span className="text-sm text-gray-600">{evaluation.improvements}</span>
+                                  <div className="text-xs font-medium text-blue-700 mb-1">Challenge:</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {evaluation.challenge_tags.map((tag, i) => (
+                                      <span key={i} className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
+
+                              {/* Comments */}
                               {evaluation.comments && (
-                                <div>
+                                <div className="mt-2 pt-2 border-t">
                                   <span className="text-xs font-medium text-gray-700">Comments: </span>
                                   <span className="text-sm text-gray-600">{evaluation.comments}</span>
                                 </div>

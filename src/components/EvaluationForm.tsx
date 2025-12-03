@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import StarRating from './StarRating';
-import { SPEECH_TYPES, EVALUATION_DIMENSIONS, EvaluationFormData } from '@/lib/types';
+import QuickCriteria from './QuickCriteria';
+import { SPEECH_TYPES, EvaluationFormData } from '@/lib/types';
 
 interface EvaluationFormProps {
   meetingId: number;
@@ -13,13 +13,9 @@ const initialFormData: EvaluationFormData = {
   evaluator_name: '',
   speaker_name: '',
   speech_type: 'prepared',
-  content_score: 0,
-  delivery_score: 0,
-  language_score: 0,
-  time_score: 0,
-  overall_score: 0,
-  strengths: '',
-  improvements: '',
+  commend_tags: [],
+  recommend_tags: [],
+  challenge_tags: [],
   comments: '',
 };
 
@@ -28,10 +24,6 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-
-  const handleScoreChange = (key: string, value: number) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,15 +43,10 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
       return;
     }
 
-    const scores = [
-      formData.content_score,
-      formData.delivery_score,
-      formData.language_score,
-      formData.time_score,
-      formData.overall_score,
-    ];
-    if (scores.some((s) => s === 0)) {
-      setErrorMessage('Please rate all dimensions');
+    // Check at least one feedback item selected
+    const totalTags = formData.commend_tags.length + formData.recommend_tags.length + formData.challenge_tags.length;
+    if (totalTags === 0) {
+      setErrorMessage('Please select at least one feedback item');
       setIsSubmitting(false);
       return;
     }
@@ -165,69 +152,28 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
         </div>
       </div>
 
-      {/* Scores Section */}
+      {/* Quick Criteria Selection - Commend/Recommend/Challenge */}
+      <QuickCriteria
+        commend={formData.commend_tags}
+        recommend={formData.recommend_tags}
+        challenge={formData.challenge_tags}
+        onCommendChange={(items) => setFormData((prev) => ({ ...prev, commend_tags: items }))}
+        onRecommendChange={(items) => setFormData((prev) => ({ ...prev, recommend_tags: items }))}
+        onChallengeChange={(items) => setFormData((prev) => ({ ...prev, challenge_tags: items }))}
+      />
+
+      {/* Comments Section */}
       <div className="bg-white rounded-xl p-4 shadow-sm border">
-        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="text-xl">⭐</span> Ratings
+        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <span className="text-xl">💬</span> Additional Comments (Optional)
         </h3>
-
-        {EVALUATION_DIMENSIONS.map((dim) => (
-          <StarRating
-            key={dim.key}
-            value={formData[dim.key as keyof EvaluationFormData] as number}
-            onChange={(value) => handleScoreChange(dim.key, value)}
-            label={dim.label}
-            description={dim.description}
-          />
-        ))}
-      </div>
-
-      {/* Feedback Section */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border">
-        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="text-xl">💬</span> Written Feedback
-        </h3>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Strengths (What went well?)
-            </label>
-            <textarea
-              value={formData.strengths}
-              onChange={(e) => setFormData((prev) => ({ ...prev, strengths: e.target.value }))}
-              placeholder="What did the speaker do well?"
-              rows={3}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Areas for Improvement
-            </label>
-            <textarea
-              value={formData.improvements}
-              onChange={(e) => setFormData((prev) => ({ ...prev, improvements: e.target.value }))}
-              placeholder="What could be improved?"
-              rows={3}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Additional Comments (Optional)
-            </label>
-            <textarea
-              value={formData.comments}
-              onChange={(e) => setFormData((prev) => ({ ...prev, comments: e.target.value }))}
-              placeholder="Any other feedback..."
-              rows={2}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            />
-          </div>
-        </div>
+        <textarea
+          value={formData.comments}
+          onChange={(e) => setFormData((prev) => ({ ...prev, comments: e.target.value }))}
+          placeholder="Any additional feedback for the speaker..."
+          rows={3}
+          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+        />
       </div>
 
       {/* Error Message */}

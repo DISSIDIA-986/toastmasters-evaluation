@@ -22,13 +22,9 @@ export async function POST(request: NextRequest) {
       evaluator_name,
       speaker_name,
       speech_type,
-      content_score,
-      delivery_score,
-      language_score,
-      time_score,
-      overall_score,
-      strengths,
-      improvements,
+      commend_tags = [],
+      recommend_tags = [],
+      challenge_tags = [],
       comments,
     } = body;
 
@@ -40,15 +36,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate scores
-    const scores = [content_score, delivery_score, language_score, time_score, overall_score];
-    for (const score of scores) {
-      if (score < 1 || score > 5) {
-        return NextResponse.json(
-          { error: 'Scores must be between 1 and 5' },
-          { status: 400 }
-        );
-      }
+    // Validate at least one feedback item
+    const totalTags = (commend_tags?.length || 0) + (recommend_tags?.length || 0) + (challenge_tags?.length || 0);
+    if (totalTags === 0) {
+      return NextResponse.json(
+        { error: 'Please select at least one feedback item' },
+        { status: 400 }
+      );
     }
 
     const evaluation = await createEvaluation({
@@ -56,13 +50,9 @@ export async function POST(request: NextRequest) {
       evaluator_name: evaluator_name.trim(),
       speaker_name: speaker_name.trim(),
       speech_type,
-      content_score,
-      delivery_score,
-      language_score,
-      time_score,
-      overall_score,
-      strengths: strengths?.trim() || '',
-      improvements: improvements?.trim() || '',
+      commend_tags: Array.isArray(commend_tags) ? commend_tags : [],
+      recommend_tags: Array.isArray(recommend_tags) ? recommend_tags : [],
+      challenge_tags: Array.isArray(challenge_tags) ? challenge_tags : [],
       comments: comments?.trim() || '',
     });
 
