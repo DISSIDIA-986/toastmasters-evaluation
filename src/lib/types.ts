@@ -35,3 +35,11 @@ export const SPEECH_TYPES = {
   prepared: 'Prepared Speech',
   table_topics: 'Table Topics',
 } as const;
+
+export const SCORE_LABELS = {
+  1: 'Poor',
+  2: 'Fair',
+  3: 'Good',
+  4: 'Very Good',
+  5: 'Excellent',
+} as const;
