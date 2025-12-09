@@ -2,10 +2,35 @@
 
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
+import { useState, useEffect } from 'react';
 
 const HOME_URL = 'https://toastmasters-evaluation.vercel.app';
 
 export default function Home() {
+  const [qrSize, setQrSize] = useState(280);
+
+  useEffect(() => {
+    const calculateQrSize = () => {
+      const screenWidth = window.innerWidth;
+      // Responsive QR size: min 280px, max 500px, scales with screen
+      // Small screens: 70% of width (max 320)
+      // Medium screens: 350-400px
+      // Large screens (TV/projector): up to 500px
+      if (screenWidth < 480) {
+        setQrSize(Math.min(Math.floor(screenWidth * 0.7), 320));
+      } else if (screenWidth < 768) {
+        setQrSize(350);
+      } else if (screenWidth < 1200) {
+        setQrSize(400);
+      } else {
+        setQrSize(500);
+      }
+    };
+
+    calculateQrSize();
+    window.addEventListener('resize', calculateQrSize);
+    return () => window.removeEventListener('resize', calculateQrSize);
+  }, []);
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Navigation */}
@@ -44,13 +69,13 @@ export default function Home() {
         </div>
 
         {/* QR Code Section */}
-        <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-blue-100 mb-12 text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Scan to Access</h2>
-          <div className="flex justify-center mb-4">
-            <div className="bg-white p-4 rounded-xl shadow-inner border">
+        <div className="bg-white rounded-2xl p-6 md:p-10 shadow-lg border-2 border-blue-100 mb-12 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Scan to Access</h2>
+          <div className="flex justify-center mb-6">
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg border-4 border-blue-200 inline-block">
               <QRCodeSVG
                 value={HOME_URL}
-                size={280}
+                size={qrSize}
                 level="H"
                 includeMargin={true}
                 bgColor="#ffffff"
@@ -58,7 +83,7 @@ export default function Home() {
               />
             </div>
           </div>
-          <p className="text-gray-600 mb-3">Share this QR code with your Toastmasters members</p>
+          <p className="text-gray-600 md:text-lg mb-3">Share this QR code with your Toastmasters members</p>
           <a
             href={HOME_URL}
             target="_blank"

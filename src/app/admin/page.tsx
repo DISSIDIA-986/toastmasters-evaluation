@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { Meeting, Evaluation, SPEECH_TYPES } from '@/lib/types';
 
@@ -230,18 +231,28 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-800">Evaluation Admin</h1>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm"
-          >
-            + New Meeting
-          </button>
+      {/* Navigation - consistent with homepage */}
+      <nav className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="font-bold text-xl text-gray-900">
+            <span className="text-blue-600">TM</span> Evaluation
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin"
+              className="text-blue-600 font-medium"
+            >
+              Admin
+            </Link>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
+            >
+              + New Meeting
+            </button>
+          </div>
         </div>
-      </header>
+      </nav>
 
       <main className="max-w-6xl mx-auto p-4">
         <div className="grid md:grid-cols-3 gap-6">
@@ -492,20 +503,45 @@ export default function AdminPage() {
 
       {/* QR Code Modal */}
       {showQRCode && selectedMeeting && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">{selectedMeeting.name}</h2>
-            <p className="text-gray-500 text-sm mb-4">Scan to submit evaluation</p>
-            <div className="bg-white p-4 inline-block rounded-lg shadow-lg">
-              <QRCodeSVG value={getEvaluationUrl()} size={250} level="H" />
+        <div className="fixed inset-0 bg-black/50 flex flex-col z-50">
+          {/* Modal Navigation */}
+          <nav className="bg-white/95 backdrop-blur-sm border-b">
+            <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+              <Link href="/" className="font-bold text-xl text-gray-900">
+                <span className="text-blue-600">TM</span> Evaluation
+              </Link>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setShowQRCode(false)}
+                  className="text-gray-600 hover:text-blue-600 font-medium transition"
+                >
+                  ← Back to Admin
+                </button>
+                <button
+                  onClick={() => setShowQRCode(false)}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition"
+                >
+                  Close
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-gray-400 mt-4 max-w-xs mx-auto break-all">{getEvaluationUrl()}</p>
-            <button
-              onClick={() => setShowQRCode(false)}
-              className="mt-4 px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
-            >
-              Close
-            </button>
+          </nav>
+          {/* Modal Content */}
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-lg w-full">
+              <h2 className="text-2xl font-semibold mb-2">{selectedMeeting.name}</h2>
+              <p className="text-gray-500 mb-6">Scan to submit evaluation</p>
+              <div className="bg-white p-6 inline-block rounded-xl shadow-lg border-4 border-blue-200">
+                <QRCodeSVG value={getEvaluationUrl()} size={300} level="H" />
+              </div>
+              <p className="text-sm text-gray-400 mt-6 max-w-sm mx-auto break-all">{getEvaluationUrl()}</p>
+              <button
+                onClick={() => navigator.clipboard.writeText(getEvaluationUrl())}
+                className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Copy Link
+              </button>
+            </div>
           </div>
         </div>
       )}
