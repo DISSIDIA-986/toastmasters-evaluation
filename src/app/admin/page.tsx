@@ -148,6 +148,78 @@ export default function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
+  const sendViaEmail = () => {
+    if (evaluations.length === 0 || !selectedMeeting) return;
+
+    const meetingDate = new Date(selectedMeeting.date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const grouped = groupEvaluationsBySpeaker();
+    const divider = '─'.repeat(40);
+
+    let body = `TOASTMASTERS EVALUATION RESULTS\n`;
+    body += `${divider}\n\n`;
+    body += `Meeting: ${selectedMeeting.name}\n`;
+    body += `Date: ${meetingDate}\n`;
+    body += `Total Evaluations: ${evaluations.length}\n\n`;
+    body += `${'═'.repeat(40)}\n\n`;
+
+    Object.entries(grouped).forEach(([speaker, evals]) => {
+      const speechType = SPEECH_TYPES[evals[0].speech_type as keyof typeof SPEECH_TYPES];
+      const feedbackCount = getTotalFeedbackCount(evals);
+
+      body += `SPEAKER: ${speaker.toUpperCase()}\n`;
+      body += `${divider}\n`;
+      body += `Speech Type: ${speechType}\n`;
+      body += `Evaluations: ${evals.length} | Feedback Items: ${feedbackCount}\n\n`;
+
+      evals.forEach((evaluation, index) => {
+        body += `  [Evaluation ${index + 1}] From: ${evaluation.evaluator_name}\n`;
+
+        if (evaluation.commend_tags && evaluation.commend_tags.length > 0) {
+          body += `\n  ✓ COMMEND (What went well):\n`;
+          evaluation.commend_tags.forEach((tag) => {
+            body += `    • ${tag}\n`;
+          });
+        }
+
+        if (evaluation.recommend_tags && evaluation.recommend_tags.length > 0) {
+          body += `\n  → RECOMMEND (Suggestions):\n`;
+          evaluation.recommend_tags.forEach((tag) => {
+            body += `    • ${tag}\n`;
+          });
+        }
+
+        if (evaluation.challenge_tags && evaluation.challenge_tags.length > 0) {
+          body += `\n  ★ CHALLENGE (Growth areas):\n`;
+          evaluation.challenge_tags.forEach((tag) => {
+            body += `    • ${tag}\n`;
+          });
+        }
+
+        if (evaluation.comments) {
+          body += `\n  💬 Comments:\n`;
+          body += `    "${evaluation.comments}"\n`;
+        }
+
+        body += `\n`;
+      });
+
+      body += `${'═'.repeat(40)}\n\n`;
+    });
+
+    body += `\n---\nGenerated from Toastmasters Evaluation System\n`;
+
+    const subject = `Evaluation Results for ${selectedMeeting.name}`;
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    window.location.href = mailtoLink;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -239,6 +311,13 @@ export default function AdminPage() {
                         className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-700 transition disabled:opacity-50"
                       >
                         Export CSV
+                      </button>
+                      <button
+                        onClick={sendViaEmail}
+                        disabled={evaluations.length === 0}
+                        className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition disabled:opacity-50"
+                      >
+                        Send to Mail
                       </button>
                     </div>
                   </div>
