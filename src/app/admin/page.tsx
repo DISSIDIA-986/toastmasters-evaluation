@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { Meeting, Evaluation, SPEECH_TYPES } from '@/lib/types';
+import StatisticianReport from '@/components/StatisticianReport';
 
 export default function AdminPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -13,6 +14,7 @@ export default function AdminPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newMeeting, setNewMeeting] = useState({ name: '', date: '' });
   const [showQRCode, setShowQRCode] = useState(false);
+  const [showStatisticianReport, setShowStatisticianReport] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
 
   // Initialize database on first load
@@ -309,12 +311,18 @@ export default function AdminPage() {
                         })}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => setShowQRCode(true)}
                         className="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-purple-700 transition"
                       >
                         Show QR
+                      </button>
+                      <button
+                        onClick={() => setShowStatisticianReport(true)}
+                        className="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-orange-700 transition"
+                      >
+                        📊 Reports
                       </button>
                       <button
                         onClick={exportToCSV}
@@ -544,6 +552,15 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Statistician Report Modal */}
+      {showStatisticianReport && selectedMeeting && (
+        <StatisticianReport
+          meetingId={selectedMeeting.id}
+          meetingName={selectedMeeting.name}
+          onClose={() => setShowStatisticianReport(false)}
+        />
       )}
     </div>
   );
