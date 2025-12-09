@@ -5,6 +5,30 @@ import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { Meeting, Evaluation, SPEECH_TYPES } from '@/lib/types';
 import StatisticianReport from '@/components/StatisticianReport';
+import GeneralEvaluatorReport from '@/components/GeneralEvaluatorReport';
+
+// P0 Security: Sanitize CSV values to prevent formula injection
+// Characters =, +, -, @, tab, carriage return can trigger formula execution in Excel
+function sanitizeForCSV(value: string): string {
+  if (value == null) return '';
+  const trimmed = value.toString().trim();
+  // Prefix with single quote to prevent formula execution
+  if (/^[=+\-@\t\r]/.test(trimmed)) {
+    return `'${trimmed}`;
+  }
+  return trimmed;
+}
+
+// P0 Security: Sanitize email content to prevent header injection
+// Remove carriage returns and limit newlines that could be used for header injection
+function sanitizeForEmail(value: string): string {
+  if (value == null) return '';
+  // Remove carriage returns and replace multiple newlines with single newline
+  return value.toString()
+    .replace(/\r/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 export default function AdminPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -15,6 +39,7 @@ export default function AdminPage() {
   const [newMeeting, setNewMeeting] = useState({ name: '', date: '' });
   const [showQRCode, setShowQRCode] = useState(false);
   const [showStatisticianReport, setShowStatisticianReport] = useState(false);
+  const [showGeneralEvaluatorReport, setShowGeneralEvaluatorReport] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
 
   // Initialize database on first load
@@ -131,14 +156,15 @@ export default function AdminPage() {
       'Comments',
     ];
 
+    // P0 Security: Apply CSV sanitization to all user-provided values
     const rows = evaluations.map((e) => [
-      e.speaker_name,
-      e.evaluator_name,
+      `"${sanitizeForCSV(e.speaker_name).replace(/"/g, '""')}"`,
+      `"${sanitizeForCSV(e.evaluator_name).replace(/"/g, '""')}"`,
       SPEECH_TYPES[e.speech_type as keyof typeof SPEECH_TYPES],
-      `"${(e.commend_tags || []).join('; ')}"`,
-      `"${(e.recommend_tags || []).join('; ')}"`,
-      `"${(e.challenge_tags || []).join('; ')}"`,
-      `"${e.comments?.replace(/"/g, '""') || ''}"`,
+      `"${(e.commend_tags || []).map(t => sanitizeForCSV(t)).join('; ').replace(/"/g, '""')}"`,
+      `"${(e.recommend_tags || []).map(t => sanitizeForCSV(t)).join('; ').replace(/"/g, '""')}"`,
+      `"${(e.challenge_tags || []).map(t => sanitizeForCSV(t)).join('; ').replace(/"/g, '""')}"`,
+      `"${sanitizeForCSV(e.comments || '').replace(/"/g, '""')}"`,
     ]);
 
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -146,7 +172,7 @@ export default function AdminPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `evaluations-${selectedMeeting?.name || 'export'}.csv`;
+    a.download = `evaluations-${sanitizeForCSV(selectedMeeting?.name || 'export')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -164,9 +190,10 @@ export default function AdminPage() {
     const grouped = groupEvaluationsBySpeaker();
     const divider = '─'.repeat(40);
 
+    // P0 Security: Sanitize all user-provided content for email
     let body = `TOASTMASTERS EVALUATION RESULTS\n`;
     body += `${divider}\n\n`;
-    body += `Meeting: ${selectedMeeting.name}\n`;
+    body += `Meeting: ${sanitizeForEmail(selectedMeeting.name)}\n`;
     body += `Date: ${meetingDate}\n`;
     body += `Total Evaluations: ${evaluations.length}\n\n`;
     body += `${'═'.repeat(40)}\n\n`;
@@ -175,38 +202,38 @@ export default function AdminPage() {
       const speechType = SPEECH_TYPES[evals[0].speech_type as keyof typeof SPEECH_TYPES];
       const feedbackCount = getTotalFeedbackCount(evals);
 
-      body += `SPEAKER: ${speaker.toUpperCase()}\n`;
+      body += `SPEAKER: ${sanitizeForEmail(speaker).toUpperCase()}\n`;
       body += `${divider}\n`;
       body += `Speech Type: ${speechType}\n`;
       body += `Evaluations: ${evals.length} | Feedback Items: ${feedbackCount}\n\n`;
 
       evals.forEach((evaluation, index) => {
-        body += `  [Evaluation ${index + 1}] From: ${evaluation.evaluator_name}\n`;
+        body += `  [Evaluation ${index + 1}] From: ${sanitizeForEmail(evaluation.evaluator_name)}\n`;
 
         if (evaluation.commend_tags && evaluation.commend_tags.length > 0) {
           body += `\n  ✓ COMMEND (What went well):\n`;
           evaluation.commend_tags.forEach((tag) => {
-            body += `    • ${tag}\n`;
+            body += `    • ${sanitizeForEmail(tag)}\n`;
           });
         }
 
         if (evaluation.recommend_tags && evaluation.recommend_tags.length > 0) {
           body += `\n  → RECOMMEND (Suggestions):\n`;
           evaluation.recommend_tags.forEach((tag) => {
-            body += `    • ${tag}\n`;
+            body += `    • ${sanitizeForEmail(tag)}\n`;
           });
         }
 
         if (evaluation.challenge_tags && evaluation.challenge_tags.length > 0) {
           body += `\n  ★ CHALLENGE (Growth areas):\n`;
           evaluation.challenge_tags.forEach((tag) => {
-            body += `    • ${tag}\n`;
+            body += `    • ${sanitizeForEmail(tag)}\n`;
           });
         }
 
         if (evaluation.comments) {
           body += `\n  💬 Comments:\n`;
-          body += `    "${evaluation.comments}"\n`;
+          body += `    "${sanitizeForEmail(evaluation.comments)}"\n`;
         }
 
         body += `\n`;
@@ -217,7 +244,7 @@ export default function AdminPage() {
 
     body += `\n---\nGenerated from Toastmasters Evaluation System\n`;
 
-    const subject = `Evaluation Results for ${selectedMeeting.name}`;
+    const subject = `Evaluation Results for ${sanitizeForEmail(selectedMeeting.name)}`;
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     window.location.href = mailtoLink;
@@ -323,6 +350,12 @@ export default function AdminPage() {
                         className="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-orange-700 transition"
                       >
                         📊 Reports
+                      </button>
+                      <button
+                        onClick={() => setShowGeneralEvaluatorReport(true)}
+                        className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700 transition"
+                      >
+                        🎯 GE Report
                       </button>
                       <button
                         onClick={exportToCSV}
@@ -560,6 +593,15 @@ export default function AdminPage() {
           meetingId={selectedMeeting.id}
           meetingName={selectedMeeting.name}
           onClose={() => setShowStatisticianReport(false)}
+        />
+      )}
+
+      {/* General Evaluator Report Modal */}
+      {showGeneralEvaluatorReport && selectedMeeting && (
+        <GeneralEvaluatorReport
+          meetingId={selectedMeeting.id}
+          meetingName={selectedMeeting.name}
+          onClose={() => setShowGeneralEvaluatorReport(false)}
         />
       )}
     </div>

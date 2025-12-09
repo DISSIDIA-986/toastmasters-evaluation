@@ -1,5 +1,5 @@
 import { sql } from '@vercel/postgres';
-import { AhUmEntry, GrammarEntry, TimerEntry } from './types';
+import { AhUmEntry, GrammarEntry, TimerEntry, EvaluatorFeedback, FunctionaryFeedback } from './types';
 
 // Initialize database tables
 export async function initializeDatabase() {
@@ -60,6 +60,21 @@ export async function initializeDatabase() {
       meeting_start VARCHAR(10),
       meeting_end VARCHAR(10),
       entries JSONB DEFAULT '[]',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // General Evaluator reports table
+  await sql`
+    CREATE TABLE IF NOT EXISTS general_evaluator_reports (
+      id SERIAL PRIMARY KEY,
+      meeting_id INTEGER REFERENCES meetings(id) ON DELETE CASCADE,
+      reporter_name VARCHAR(255) NOT NULL,
+      evaluator_feedbacks JSONB DEFAULT '[]',
+      functionary_feedbacks JSONB DEFAULT '[]',
+      meeting_highlights TEXT,
+      meeting_improvements TEXT,
+      overall_comments TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
@@ -279,13 +294,75 @@ export async function deleteTimerReport(id: number) {
   await sql`DELETE FROM timer_reports WHERE id = ${id}`;
 }
 
+// ============ General Evaluator Report Operations ============
+
+export async function createGeneralEvaluatorReport(data: {
+  meeting_id: number;
+  reporter_name: string;
+  evaluator_feedbacks: EvaluatorFeedback[];
+  functionary_feedbacks: FunctionaryFeedback[];
+  meeting_highlights: string;
+  meeting_improvements: string;
+  overall_comments: string;
+}) {
+  const result = await sql`
+    INSERT INTO general_evaluator_reports (
+      meeting_id, reporter_name, evaluator_feedbacks, functionary_feedbacks,
+      meeting_highlights, meeting_improvements, overall_comments
+    )
+    VALUES (
+      ${data.meeting_id}, ${data.reporter_name},
+      ${JSON.stringify(data.evaluator_feedbacks)}, ${JSON.stringify(data.functionary_feedbacks)},
+      ${data.meeting_highlights}, ${data.meeting_improvements}, ${data.overall_comments}
+    )
+    RETURNING *
+  `;
+  return result.rows[0];
+}
+
+export async function getGeneralEvaluatorReportsByMeeting(meetingId: number) {
+  const result = await sql`
+    SELECT * FROM general_evaluator_reports
+    WHERE meeting_id = ${meetingId}
+    ORDER BY created_at DESC
+  `;
+  return result.rows;
+}
+
+export async function updateGeneralEvaluatorReport(id: number, data: {
+  reporter_name: string;
+  evaluator_feedbacks: EvaluatorFeedback[];
+  functionary_feedbacks: FunctionaryFeedback[];
+  meeting_highlights: string;
+  meeting_improvements: string;
+  overall_comments: string;
+}) {
+  const result = await sql`
+    UPDATE general_evaluator_reports
+    SET reporter_name = ${data.reporter_name},
+        evaluator_feedbacks = ${JSON.stringify(data.evaluator_feedbacks)},
+        functionary_feedbacks = ${JSON.stringify(data.functionary_feedbacks)},
+        meeting_highlights = ${data.meeting_highlights},
+        meeting_improvements = ${data.meeting_improvements},
+        overall_comments = ${data.overall_comments}
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  return result.rows[0];
+}
+
+export async function deleteGeneralEvaluatorReport(id: number) {
+  await sql`DELETE FROM general_evaluator_reports WHERE id = ${id}`;
+}
+
 // ============ Get All Reports for a Meeting ============
 
 export async function getAllReportsByMeeting(meetingId: number) {
-  const [ahUm, grammarian, timer] = await Promise.all([
+  const [ahUm, grammarian, timer, generalEvaluator] = await Promise.all([
     getAhUmReportsByMeeting(meetingId),
     getGrammarianReportsByMeeting(meetingId),
     getTimerReportsByMeeting(meetingId),
+    getGeneralEvaluatorReportsByMeeting(meetingId),
   ]);
-  return { ahUm, grammarian, timer };
+  return { ahUm, grammarian, timer, generalEvaluator };
 }

@@ -9,6 +9,9 @@ import {
   TimerEntry,
   TimerReport,
   MEETING_ROLES,
+  validateAhUmEntries,
+  validateGrammarEntries,
+  validateTimerEntries,
 } from '@/lib/types';
 
 interface StatisticianReportProps {
@@ -225,7 +228,7 @@ export default function StatisticianReport({
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+            className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition"
           >
             Close
           </button>
@@ -273,7 +276,7 @@ export default function StatisticianReport({
                     onChange={(e) =>
                       setAhUmForm((prev) => ({ ...prev, reporter_name: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
                     placeholder="Enter your name"
                   />
                 </div>
@@ -283,14 +286,14 @@ export default function StatisticianReport({
                   <div className="mb-4 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-2 py-2 text-left">Speaker</th>
-                          <th className="px-2 py-2 text-center w-16">Ah/Um</th>
-                          <th className="px-2 py-2 text-center w-16">Like</th>
-                          <th className="px-2 py-2 text-center w-16">So</th>
-                          <th className="px-2 py-2 text-center w-16">But</th>
-                          <th className="px-2 py-2 text-center w-16">Other</th>
-                          <th className="px-2 py-2 text-center w-16">Total</th>
+                        <tr className="bg-gray-100">
+                          <th className="px-2 py-2 text-left text-gray-700 font-semibold">Speaker</th>
+                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">Ah/Um</th>
+                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">Like</th>
+                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">So</th>
+                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">But</th>
+                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">Other</th>
+                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">Total</th>
                           <th className="px-2 py-2 w-10"></th>
                         </tr>
                       </thead>
@@ -306,7 +309,7 @@ export default function StatisticianReport({
                                   newEntries[idx].speaker_name = e.target.value;
                                   setAhUmForm((prev) => ({ ...prev, entries: newEntries }));
                                 }}
-                                className="w-full px-2 py-1 border rounded"
+                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
                                 placeholder="Name"
                               />
                             </td>
@@ -321,11 +324,11 @@ export default function StatisticianReport({
                                     newEntries[idx][field] = parseInt(e.target.value) || 0;
                                     setAhUmForm((prev) => ({ ...prev, entries: newEntries }));
                                   }}
-                                  className="w-full px-2 py-1 border rounded text-center"
+                                  className="w-full px-2 py-1 border rounded text-center text-gray-900 bg-white"
                                 />
                               </td>
                             ))}
-                            <td className="px-2 py-2 text-center font-medium">
+                            <td className="px-2 py-2 text-center font-medium text-gray-900">
                               {entry.ah_um + entry.like + entry.so + entry.but + entry.other}
                             </td>
                             <td className="px-2 py-2">
@@ -334,7 +337,7 @@ export default function StatisticianReport({
                                   const newEntries = ahUmForm.entries.filter((_, i) => i !== idx);
                                   setAhUmForm((prev) => ({ ...prev, entries: newEntries }));
                                 }}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-red-600 hover:text-red-800 font-bold"
                               >
                                 ×
                               </button>
@@ -349,7 +352,7 @@ export default function StatisticianReport({
                 <div className="flex gap-2">
                   <button
                     onClick={addAhUmEntry}
-                    className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition text-sm"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
                   >
                     + Add Speaker
                   </button>
@@ -375,26 +378,26 @@ export default function StatisticianReport({
                       </div>
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-2 py-1 text-left">Speaker</th>
-                            <th className="px-2 py-1 text-center">Ah/Um</th>
-                            <th className="px-2 py-1 text-center">Like</th>
-                            <th className="px-2 py-1 text-center">So</th>
-                            <th className="px-2 py-1 text-center">But</th>
-                            <th className="px-2 py-1 text-center">Other</th>
-                            <th className="px-2 py-1 text-center">Total</th>
+                          <tr className="bg-gray-100">
+                            <th className="px-2 py-1 text-left text-gray-700 font-semibold">Speaker</th>
+                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Ah/Um</th>
+                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Like</th>
+                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">So</th>
+                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">But</th>
+                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Other</th>
+                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Total</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {(report.entries as AhUmEntry[]).map((entry, idx) => (
+                          {validateAhUmEntries(report.entries).map((entry, idx) => (
                             <tr key={idx} className="border-t">
-                              <td className="px-2 py-1">{entry.speaker_name}</td>
-                              <td className="px-2 py-1 text-center">{entry.ah_um}</td>
-                              <td className="px-2 py-1 text-center">{entry.like}</td>
-                              <td className="px-2 py-1 text-center">{entry.so}</td>
-                              <td className="px-2 py-1 text-center">{entry.but}</td>
-                              <td className="px-2 py-1 text-center">{entry.other}</td>
-                              <td className="px-2 py-1 text-center font-medium">
+                              <td className="px-2 py-1 text-gray-800">{entry.speaker_name}</td>
+                              <td className="px-2 py-1 text-center text-gray-800">{entry.ah_um}</td>
+                              <td className="px-2 py-1 text-center text-gray-800">{entry.like}</td>
+                              <td className="px-2 py-1 text-center text-gray-800">{entry.so}</td>
+                              <td className="px-2 py-1 text-center text-gray-800">{entry.but}</td>
+                              <td className="px-2 py-1 text-center text-gray-800">{entry.other}</td>
+                              <td className="px-2 py-1 text-center font-medium text-gray-900">
                                 {entry.ah_um + entry.like + entry.so + entry.but + entry.other}
                               </td>
                             </tr>
@@ -425,7 +428,7 @@ export default function StatisticianReport({
                       onChange={(e) =>
                         setGrammarianForm((prev) => ({ ...prev, reporter_name: e.target.value }))
                       }
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
                       placeholder="Enter your name"
                     />
                   </div>
@@ -439,7 +442,7 @@ export default function StatisticianReport({
                       onChange={(e) =>
                         setGrammarianForm((prev) => ({ ...prev, word_of_day: e.target.value }))
                       }
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
                       placeholder="e.g., Serendipity"
                     />
                   </div>
@@ -457,7 +460,7 @@ export default function StatisticianReport({
                         word_of_day_definition: e.target.value,
                       }))
                     }
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
                     placeholder="Definition of the word"
                   />
                 </div>
@@ -466,7 +469,7 @@ export default function StatisticianReport({
                 {grammarianForm.entries.length > 0 && (
                   <div className="mb-4 space-y-3">
                     {grammarianForm.entries.map((entry, idx) => (
-                      <div key={idx} className="p-3 bg-gray-50 rounded-lg">
+                      <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex gap-2 mb-2">
                           <input
                             type="text"
@@ -476,7 +479,7 @@ export default function StatisticianReport({
                               newEntries[idx].speaker_name = e.target.value;
                               setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
                             }}
-                            className="flex-1 px-3 py-2 border rounded-lg"
+                            className="flex-1 px-3 py-2 border rounded-lg text-gray-900 bg-white"
                             placeholder="Speaker name"
                           />
                           <select
@@ -486,7 +489,7 @@ export default function StatisticianReport({
                               newEntries[idx].is_positive = e.target.value === 'positive';
                               setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
                             }}
-                            className="px-3 py-2 border rounded-lg"
+                            className="px-3 py-2 border rounded-lg text-gray-900 bg-white"
                           >
                             <option value="positive">✓ Good</option>
                             <option value="negative">✗ Needs Work</option>
@@ -496,7 +499,7 @@ export default function StatisticianReport({
                               const newEntries = grammarianForm.entries.filter((_, i) => i !== idx);
                               setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
                             }}
-                            className="px-3 py-2 text-red-500 hover:text-red-700"
+                            className="px-3 py-2 text-red-600 hover:text-red-800 font-bold"
                           >
                             ×
                           </button>
@@ -509,7 +512,7 @@ export default function StatisticianReport({
                             newEntries[idx].phrase = e.target.value;
                             setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
                           }}
-                          className="w-full px-3 py-2 border rounded-lg mb-2"
+                          className="w-full px-3 py-2 border rounded-lg mb-2 text-gray-900 bg-white"
                           placeholder="Phrase or word used"
                         />
                         <input
@@ -520,7 +523,7 @@ export default function StatisticianReport({
                             newEntries[idx].comment = e.target.value;
                             setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
                           }}
-                          className="w-full px-3 py-2 border rounded-lg"
+                          className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
                           placeholder="Comment or correction"
                         />
                       </div>
@@ -531,7 +534,7 @@ export default function StatisticianReport({
                 <div className="flex gap-2">
                   <button
                     onClick={addGrammarEntry}
-                    className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition text-sm"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
                   >
                     + Add Entry
                   </button>
@@ -568,22 +571,22 @@ export default function StatisticianReport({
                         </div>
                       )}
                       <div className="space-y-2">
-                        {(report.entries as GrammarEntry[]).map((entry, idx) => (
+                        {validateGrammarEntries(report.entries).map((entry, idx) => (
                           <div
                             key={idx}
-                            className={`p-2 rounded ${
-                              entry.is_positive ? 'bg-green-50' : 'bg-yellow-50'
+                            className={`p-2 rounded border ${
+                              entry.is_positive ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
                             }`}
                           >
                             <div className="flex items-center gap-2">
-                              <span className={entry.is_positive ? 'text-green-600' : 'text-yellow-600'}>
+                              <span className={entry.is_positive ? 'text-green-700 font-bold' : 'text-yellow-700 font-bold'}>
                                 {entry.is_positive ? '✓' : '✗'}
                               </span>
-                              <span className="font-medium">{entry.speaker_name}</span>
-                              <span className="text-gray-600">- &quot;{entry.phrase}&quot;</span>
+                              <span className="font-medium text-gray-900">{entry.speaker_name}</span>
+                              <span className="text-gray-700">- &quot;{entry.phrase}&quot;</span>
                             </div>
                             {entry.comment && (
-                              <div className="text-sm text-gray-500 ml-6">{entry.comment}</div>
+                              <div className="text-sm text-gray-600 ml-6">{entry.comment}</div>
                             )}
                           </div>
                         ))}
@@ -612,7 +615,7 @@ export default function StatisticianReport({
                       onChange={(e) =>
                         setTimerForm((prev) => ({ ...prev, reporter_name: e.target.value }))
                       }
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
                       placeholder="Enter your name"
                     />
                   </div>
@@ -626,7 +629,7 @@ export default function StatisticianReport({
                       onChange={(e) =>
                         setTimerForm((prev) => ({ ...prev, meeting_start: e.target.value }))
                       }
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
                     />
                   </div>
                   <div>
@@ -639,7 +642,7 @@ export default function StatisticianReport({
                       onChange={(e) =>
                         setTimerForm((prev) => ({ ...prev, meeting_end: e.target.value }))
                       }
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
                     />
                   </div>
                 </div>
@@ -649,12 +652,12 @@ export default function StatisticianReport({
                   <div className="mb-4 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-2 py-2 text-left">Role</th>
-                          <th className="px-2 py-2 text-left">Speaker</th>
-                          <th className="px-2 py-2 text-left">Title/Topic</th>
-                          <th className="px-2 py-2 text-center w-24">Time (m:ss)</th>
-                          <th className="px-2 py-2 text-center w-24">Status</th>
+                        <tr className="bg-gray-100">
+                          <th className="px-2 py-2 text-left text-gray-700 font-semibold">Role</th>
+                          <th className="px-2 py-2 text-left text-gray-700 font-semibold">Speaker</th>
+                          <th className="px-2 py-2 text-left text-gray-700 font-semibold">Title/Topic</th>
+                          <th className="px-2 py-2 text-center w-24 text-gray-700 font-semibold">Time (m:ss)</th>
+                          <th className="px-2 py-2 text-center w-24 text-gray-700 font-semibold">Status</th>
                           <th className="px-2 py-2 w-10"></th>
                         </tr>
                       </thead>
@@ -669,7 +672,7 @@ export default function StatisticianReport({
                                   newEntries[idx].role = e.target.value;
                                   setTimerForm((prev) => ({ ...prev, entries: newEntries }));
                                 }}
-                                className="w-full px-2 py-1 border rounded"
+                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
                               >
                                 <option value="">Select role</option>
                                 {MEETING_ROLES.map((role) => (
@@ -688,7 +691,7 @@ export default function StatisticianReport({
                                   newEntries[idx].speaker_name = e.target.value;
                                   setTimerForm((prev) => ({ ...prev, entries: newEntries }));
                                 }}
-                                className="w-full px-2 py-1 border rounded"
+                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
                                 placeholder="Name"
                               />
                             </td>
@@ -701,7 +704,7 @@ export default function StatisticianReport({
                                   newEntries[idx].title_topic = e.target.value;
                                   setTimerForm((prev) => ({ ...prev, entries: newEntries }));
                                 }}
-                                className="w-full px-2 py-1 border rounded"
+                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
                                 placeholder="Title"
                               />
                             </td>
@@ -714,7 +717,7 @@ export default function StatisticianReport({
                                   newEntries[idx].duration_seconds = parseTime(e.target.value);
                                   setTimerForm((prev) => ({ ...prev, entries: newEntries }));
                                 }}
-                                className="w-full px-2 py-1 border rounded text-center"
+                                className="w-full px-2 py-1 border rounded text-center text-gray-900 bg-white"
                                 placeholder="0:00"
                               />
                             </td>
@@ -726,7 +729,7 @@ export default function StatisticianReport({
                                   newEntries[idx].status = e.target.value as TimerEntry['status'];
                                   setTimerForm((prev) => ({ ...prev, entries: newEntries }));
                                 }}
-                                className="w-full px-2 py-1 border rounded"
+                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
                               >
                                 <option value="green">🟢 Green</option>
                                 <option value="yellow">🟡 Yellow</option>
@@ -740,7 +743,7 @@ export default function StatisticianReport({
                                   const newEntries = timerForm.entries.filter((_, i) => i !== idx);
                                   setTimerForm((prev) => ({ ...prev, entries: newEntries }));
                                 }}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-red-600 hover:text-red-800 font-bold"
                               >
                                 ×
                               </button>
@@ -755,7 +758,7 @@ export default function StatisticianReport({
                 <div className="flex gap-2">
                   <button
                     onClick={addTimerEntry}
-                    className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition text-sm"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
                   >
                     + Add Entry
                   </button>
@@ -786,21 +789,21 @@ export default function StatisticianReport({
                       </div>
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-2 py-1 text-left">Role</th>
-                            <th className="px-2 py-1 text-left">Speaker</th>
-                            <th className="px-2 py-1 text-left">Title/Topic</th>
-                            <th className="px-2 py-1 text-center">Time</th>
-                            <th className="px-2 py-1 text-center">Status</th>
+                          <tr className="bg-gray-100">
+                            <th className="px-2 py-1 text-left text-gray-700 font-semibold">Role</th>
+                            <th className="px-2 py-1 text-left text-gray-700 font-semibold">Speaker</th>
+                            <th className="px-2 py-1 text-left text-gray-700 font-semibold">Title/Topic</th>
+                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Time</th>
+                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Status</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {(report.entries as TimerEntry[]).map((entry, idx) => (
+                          {validateTimerEntries(report.entries).map((entry, idx) => (
                             <tr key={idx} className="border-t">
-                              <td className="px-2 py-1">{entry.role}</td>
-                              <td className="px-2 py-1">{entry.speaker_name}</td>
-                              <td className="px-2 py-1">{entry.title_topic}</td>
-                              <td className="px-2 py-1 text-center">
+                              <td className="px-2 py-1 text-gray-800">{entry.role}</td>
+                              <td className="px-2 py-1 text-gray-800">{entry.speaker_name}</td>
+                              <td className="px-2 py-1 text-gray-800">{entry.title_topic}</td>
+                              <td className="px-2 py-1 text-center text-gray-900 font-medium">
                                 {formatTime(entry.duration_seconds)}
                               </td>
                               <td className="px-2 py-1 text-center">

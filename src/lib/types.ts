@@ -153,3 +153,153 @@ export const MEETING_ROLES = [
 
 // Filler word types for Ah-Um Counter
 export const FILLER_WORDS = ['ah_um', 'like', 'so', 'but', 'other'] as const;
+
+// ============ General Evaluator Report Types ============
+
+// Evaluation of a Speech Evaluator
+export interface EvaluatorFeedback {
+  evaluator_name: string;
+  speaker_evaluated: string; // who they evaluated
+  rating: 1 | 2 | 3 | 4 | 5; // 1-5 scale
+  strengths: string;
+  areas_to_improve: string;
+  comments: string;
+}
+
+// Evaluation of Meeting Functionaries (Timer, Grammarian, Ah-Um Counter)
+export interface FunctionaryFeedback {
+  role: 'Timer' | 'Grammarian' | 'Ah-Um Counter' | 'Table Topics Master' | 'Toastmaster' | 'Other';
+  person_name: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  feedback: string;
+}
+
+// General Evaluator Report
+export interface GeneralEvaluatorReport {
+  id: number;
+  meeting_id: number;
+  reporter_name: string; // General Evaluator's name
+  evaluator_feedbacks: EvaluatorFeedback[]; // Feedback for Speech Evaluators
+  functionary_feedbacks: FunctionaryFeedback[]; // Feedback for Timer, Grammarian, etc.
+  meeting_highlights: string; // What went well in the meeting
+  meeting_improvements: string; // What could be improved
+  overall_comments: string; // General observations
+  created_at: string;
+}
+
+// Form data type
+export interface GeneralEvaluatorReportFormData {
+  reporter_name: string;
+  evaluator_feedbacks: EvaluatorFeedback[];
+  functionary_feedbacks: FunctionaryFeedback[];
+  meeting_highlights: string;
+  meeting_improvements: string;
+  overall_comments: string;
+}
+
+// Roles that General Evaluator can evaluate
+export const FUNCTIONARY_ROLES = [
+  'Timer',
+  'Grammarian',
+  'Ah-Um Counter',
+  'Table Topics Master',
+  'Toastmaster',
+  'Other',
+] as const;
+
+// ============ Type Guards for JSONB Validation (P1 Security) ============
+
+// Type guard for AhUmEntry - validates JSONB data from database
+export function isValidAhUmEntry(entry: unknown): entry is AhUmEntry {
+  if (typeof entry !== 'object' || entry === null) return false;
+  const e = entry as Record<string, unknown>;
+  return (
+    typeof e.speaker_name === 'string' &&
+    typeof e.ah_um === 'number' &&
+    typeof e.like === 'number' &&
+    typeof e.so === 'number' &&
+    typeof e.but === 'number' &&
+    typeof e.other === 'number'
+  );
+}
+
+// Type guard for GrammarEntry - validates JSONB data from database
+export function isValidGrammarEntry(entry: unknown): entry is GrammarEntry {
+  if (typeof entry !== 'object' || entry === null) return false;
+  const e = entry as Record<string, unknown>;
+  return (
+    typeof e.speaker_name === 'string' &&
+    typeof e.phrase === 'string' &&
+    typeof e.is_positive === 'boolean' &&
+    typeof e.comment === 'string'
+  );
+}
+
+// Type guard for TimerEntry - validates JSONB data from database
+export function isValidTimerEntry(entry: unknown): entry is TimerEntry {
+  if (typeof entry !== 'object' || entry === null) return false;
+  const e = entry as Record<string, unknown>;
+  return (
+    typeof e.role === 'string' &&
+    typeof e.speaker_name === 'string' &&
+    typeof e.title_topic === 'string' &&
+    typeof e.duration_seconds === 'number' &&
+    (e.status === 'green' || e.status === 'yellow' || e.status === 'red' || e.status === 'over')
+  );
+}
+
+// Helper to validate and filter an array of entries
+export function validateAhUmEntries(entries: unknown[]): AhUmEntry[] {
+  if (!Array.isArray(entries)) return [];
+  return entries.filter(isValidAhUmEntry);
+}
+
+export function validateGrammarEntries(entries: unknown[]): GrammarEntry[] {
+  if (!Array.isArray(entries)) return [];
+  return entries.filter(isValidGrammarEntry);
+}
+
+export function validateTimerEntries(entries: unknown[]): TimerEntry[] {
+  if (!Array.isArray(entries)) return [];
+  return entries.filter(isValidTimerEntry);
+}
+
+// Type guard for EvaluatorFeedback
+export function isValidEvaluatorFeedback(entry: unknown): entry is EvaluatorFeedback {
+  if (typeof entry !== 'object' || entry === null) return false;
+  const e = entry as Record<string, unknown>;
+  return (
+    typeof e.evaluator_name === 'string' &&
+    typeof e.speaker_evaluated === 'string' &&
+    typeof e.rating === 'number' &&
+    e.rating >= 1 && e.rating <= 5 &&
+    typeof e.strengths === 'string' &&
+    typeof e.areas_to_improve === 'string' &&
+    typeof e.comments === 'string'
+  );
+}
+
+// Type guard for FunctionaryFeedback
+export function isValidFunctionaryFeedback(entry: unknown): entry is FunctionaryFeedback {
+  if (typeof entry !== 'object' || entry === null) return false;
+  const e = entry as Record<string, unknown>;
+  const validRoles = ['Timer', 'Grammarian', 'Ah-Um Counter', 'Table Topics Master', 'Toastmaster', 'Other'];
+  return (
+    typeof e.role === 'string' &&
+    validRoles.includes(e.role) &&
+    typeof e.person_name === 'string' &&
+    typeof e.rating === 'number' &&
+    e.rating >= 1 && e.rating <= 5 &&
+    typeof e.feedback === 'string'
+  );
+}
+
+export function validateEvaluatorFeedbacks(entries: unknown[]): EvaluatorFeedback[] {
+  if (!Array.isArray(entries)) return [];
+  return entries.filter(isValidEvaluatorFeedback);
+}
+
+export function validateFunctionaryFeedbacks(entries: unknown[]): FunctionaryFeedback[] {
+  if (!Array.isArray(entries)) return [];
+  return entries.filter(isValidFunctionaryFeedback);
+}

@@ -4,6 +4,7 @@ import {
   createAhUmReport,
   createGrammarianReport,
   createTimerReport,
+  createGeneralEvaluatorReport,
 } from '@/lib/db';
 
 // GET all reports for a meeting
@@ -79,9 +80,20 @@ export async function POST(
           entries: data.entries || [],
         });
         break;
+      case 'general_evaluator':
+        result = await createGeneralEvaluatorReport({
+          meeting_id: id,
+          reporter_name: data.reporter_name,
+          evaluator_feedbacks: data.evaluator_feedbacks || [],
+          functionary_feedbacks: data.functionary_feedbacks || [],
+          meeting_highlights: data.meeting_highlights || '',
+          meeting_improvements: data.meeting_improvements || '',
+          overall_comments: data.overall_comments || '',
+        });
+        break;
       default:
         return NextResponse.json(
-          { error: 'Invalid report type. Use: ah_um, grammarian, or timer' },
+          { error: 'Invalid report type. Use: ah_um, grammarian, timer, or general_evaluator' },
           { status: 400 }
         );
     }
