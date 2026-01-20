@@ -25,186 +25,164 @@ export default function QuickCriteria({
   );
 
   const allSelected = [...commend, ...recommend, ...challenge];
+  
+  // We keep all items visible in the list now, but mark them as selected
+  // This allows users to easily toggle them off from the list itself without finding them in the summary
   const availableCriteria = Object.entries(CRITERIA_CATEGORIES).map(([category, items]) => ({
     category,
-    items: items.filter((item) => !allSelected.includes(item)),
+    items,
   }));
 
-  const handleAddTo = (item: string, target: 'commend' | 'recommend' | 'challenge') => {
-    // Remove from other lists first
+  const handleToggle = (item: string, target: 'commend' | 'recommend' | 'challenge') => {
+    // Check if currently selected in the target list
+    const isCurrentlySelected = 
+      (target === 'commend' && commend.includes(item)) ||
+      (target === 'recommend' && recommend.includes(item)) ||
+      (target === 'challenge' && challenge.includes(item));
+
+    // Remove from all lists first (clean slate or toggle off)
     if (commend.includes(item)) onCommendChange(commend.filter((i) => i !== item));
     if (recommend.includes(item)) onRecommendChange(recommend.filter((i) => i !== item));
     if (challenge.includes(item)) onChallengeChange(challenge.filter((i) => i !== item));
 
-    // Add to target
-    if (target === 'commend') onCommendChange([...commend.filter((i) => i !== item), item]);
-    if (target === 'recommend') onRecommendChange([...recommend.filter((i) => i !== item), item]);
-    if (target === 'challenge') onChallengeChange([...challenge.filter((i) => i !== item), item]);
+    // If it wasn't selected in the target list, add it (toggle on)
+    // But if it was already selected in THIS target list, we just removed it above (toggle off behavior)
+    if (!isCurrentlySelected) {
+      if (target === 'commend') onCommendChange([...commend.filter((i) => i !== item), item]);
+      if (target === 'recommend') onRecommendChange([...recommend.filter((i) => i !== item), item]);
+      if (target === 'challenge') onChallengeChange([...challenge.filter((i) => i !== item), item]);
+    }
   };
 
-  const handleRemove = (item: string) => {
-    onCommendChange(commend.filter((i) => i !== item));
-    onRecommendChange(recommend.filter((i) => i !== item));
-    onChallengeChange(challenge.filter((i) => i !== item));
+  const getSelectionState = (item: string) => {
+    if (commend.includes(item)) return 'commend';
+    if (recommend.includes(item)) return 'recommend';
+    if (challenge.includes(item)) return 'challenge';
+    return null;
   };
 
   return (
-    <div className="space-y-4">
-      {/* Criteria Pool */}
+    <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="p-3 bg-gray-50 border-b">
-          <h3 className="font-semibold text-gray-800">Available Criteria</h3>
-          <p className="text-xs text-gray-500">Tap buttons to add to Commend / Recommend / Challenge</p>
+        <div className="p-4 bg-gray-50 border-b">
+          <h3 className="font-bold text-lg text-gray-800">Evaluation Criteria</h3>
+          <p className="text-sm text-gray-500 mt-1">Select items to categorize your feedback</p>
         </div>
 
-        <div className="max-h-72 overflow-y-auto">
+        <div className="divide-y divide-gray-100">
           {availableCriteria.map(({ category, items }) => (
-            <div key={category} className="border-b last:border-b-0">
+            <div key={category} className="bg-white">
               <button
                 type="button"
                 onClick={() => setExpandedCategory(expandedCategory === category ? null : category)}
-                className="w-full px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition text-left"
+                className="w-full px-4 py-5 flex justify-between items-center hover:bg-gray-50 transition text-left active:bg-gray-100"
               >
-                <span className="font-medium text-gray-700 text-sm">{category}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">{items.length} left</span>
-                  <span className="text-gray-400">{expandedCategory === category ? '−' : '+'}</span>
-                </div>
+                <span className="font-semibold text-gray-800 text-lg">{category}</span>
+                <span className={`text-2xl text-gray-400 transition-transform ${expandedCategory === category ? 'rotate-180' : ''}`}>
+                  ▼
+                </span>
               </button>
 
-              {expandedCategory === category && items.length > 0 && (
-                <div className="px-3 pb-3 space-y-2">
-                  {items.map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm"
-                    >
-                      <span className="text-gray-700 flex-1 mr-2">{item}</span>
-                      <div className="flex gap-1 flex-shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleAddTo(item, 'commend')}
-                          className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition"
-                        >
-                          C
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleAddTo(item, 'recommend')}
-                          className="px-2 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition"
-                        >
-                          R
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleAddTo(item, 'challenge')}
-                          className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition"
-                        >
-                          Ch
-                        </button>
+              {expandedCategory === category && (
+                <div className="px-4 pb-6 space-y-6 bg-gray-50/50">
+                  {items.map((item) => {
+                    const status = getSelectionState(item);
+                    return (
+                      <div key={item} className="bg-white p-4 rounded-xl border shadow-sm">
+                        <p className="text-gray-800 font-medium text-lg mb-3">{item}</p>
+                        
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleToggle(item, 'commend')}
+                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 ${
+                              status === 'commend'
+                                ? 'bg-green-100 border-green-500 text-green-800 shadow-inner'
+                                : 'bg-white border-gray-200 text-gray-600 hover:border-green-300'
+                            }`}
+                          >
+                            {status === 'commend' ? '✓ Commend' : 'Commend'}
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => handleToggle(item, 'recommend')}
+                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 ${
+                              status === 'recommend'
+                                ? 'bg-yellow-100 border-yellow-500 text-yellow-800 shadow-inner'
+                                : 'bg-white border-gray-200 text-gray-600 hover:border-yellow-300'
+                            }`}
+                          >
+                            {status === 'recommend' ? '✓ Rec...' : 'Recommend'}
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => handleToggle(item, 'challenge')}
+                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 ${
+                              status === 'challenge'
+                                ? 'bg-blue-100 border-blue-500 text-blue-800 shadow-inner'
+                                : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'
+                            }`}
+                          >
+                            {status === 'challenge' ? '✓ Chall...' : 'Challenge'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              )}
-
-              {expandedCategory === category && items.length === 0 && (
-                <p className="px-4 pb-3 text-xs text-gray-400 italic">All items assigned</p>
               )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Commend Section */}
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="p-3 bg-green-500 text-white">
-          <h3 className="font-semibold">✅ Commend - What you did well</h3>
-        </div>
-        <div className="p-3">
-          {commend.length === 0 ? (
-            <p className="text-gray-400 text-sm italic">No items selected</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {commend.map((item) => (
-                <span
-                  key={item}
-                  className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full"
-                >
-                  {item}
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(item)}
-                    className="hover:text-green-900 font-bold"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
+      {/* Summary Section (Read-only view of what's selected) */}
+      {(commend.length > 0 || recommend.length > 0 || challenge.length > 0) && (
+        <div className="bg-white rounded-xl shadow-sm border p-4 space-y-4">
+          <h3 className="font-bold text-gray-800">Summary</h3>
+          
+          {commend.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-green-600 uppercase tracking-wide">Commendations</span>
+              <div className="flex flex-wrap gap-2">
+                {commend.map(item => (
+                  <span key={item} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                    {item}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Recommend Section */}
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="p-3 bg-yellow-500 text-white">
-          <h3 className="font-semibold">💡 Recommend - What you can improve</h3>
-        </div>
-        <div className="p-3">
-          {recommend.length === 0 ? (
-            <p className="text-gray-400 text-sm italic">No items selected</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {recommend.map((item) => (
-                <span
-                  key={item}
-                  className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full"
-                >
-                  {item}
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(item)}
-                    className="hover:text-yellow-900 font-bold"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
+          {recommend.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-yellow-600 uppercase tracking-wide">Recommendations</span>
+              <div className="flex flex-wrap gap-2">
+                {recommend.map(item => (
+                  <span key={item} className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                    {item}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Challenge Section */}
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="p-3 bg-blue-500 text-white">
-          <h3 className="font-semibold">🎯 Challenge - What I challenge you to try</h3>
-        </div>
-        <div className="p-3">
-          {challenge.length === 0 ? (
-            <p className="text-gray-400 text-sm italic">No items selected</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {challenge.map((item) => (
-                <span
-                  key={item}
-                  className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full"
-                >
-                  {item}
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(item)}
-                    className="hover:text-blue-900 font-bold"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
+          {challenge.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">Challenges</span>
+              <div className="flex flex-wrap gap-2">
+                {challenge.map(item => (
+                  <span key={item} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    {item}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

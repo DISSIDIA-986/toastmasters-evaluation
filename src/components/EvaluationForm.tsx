@@ -79,13 +79,13 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
 
   if (submitStatus === 'success') {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-        <div className="text-4xl mb-3">✅</div>
-        <h3 className="text-xl font-semibold text-green-800 mb-2">Thank You!</h3>
-        <p className="text-green-600 mb-4">Your evaluation has been submitted successfully.</p>
+      <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center my-8">
+        <div className="text-6xl mb-6">✅</div>
+        <h3 className="text-3xl font-bold text-green-800 mb-4">Thank You!</h3>
+        <p className="text-green-700 text-lg mb-8">Your evaluation has been submitted successfully.</p>
         <button
           onClick={() => setSubmitStatus('idle')}
-          className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
+          className="w-full bg-green-600 text-white text-xl font-semibold px-8 py-4 rounded-xl hover:bg-green-700 transition shadow-lg"
         >
           Submit Another Evaluation
         </button>
@@ -94,16 +94,17 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-8 pb-12">
       {/* Names Section */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border">
-        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="text-xl">👤</span> Basic Info
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-3">
+          <span className="text-2xl">👤</span> 
+          <span className="text-xl">Basic Info</span>
         </h3>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-lg font-medium text-gray-700 mb-2">
               Your Name (Evaluator)
             </label>
             <input
@@ -111,12 +112,12 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
               value={formData.evaluator_name}
               onChange={(e) => setFormData((prev) => ({ ...prev, evaluator_name: e.target.value }))}
               placeholder="Enter your name"
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-lg font-medium text-gray-700 mb-2">
               Speaker Name
             </label>
             <input
@@ -124,24 +125,24 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
               value={formData.speaker_name}
               onChange={(e) => setFormData((prev) => ({ ...prev, speaker_name: e.target.value }))}
               placeholder="Enter speaker's name"
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-lg font-medium text-gray-700 mb-3">
               Speech Type
             </label>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               {(Object.entries(SPEECH_TYPES) as [keyof typeof SPEECH_TYPES, string][]).map(([key, label]) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, speech_type: key }))}
-                  className={`flex-1 py-3 px-4 rounded-lg border-2 transition ${
+                  className={`flex-1 py-4 px-6 rounded-xl border-2 text-lg font-medium transition-all ${
                     formData.speech_type === key
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md transform scale-[1.02]'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   {label}
@@ -163,38 +164,41 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
       />
 
       {/* Comments Section */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border">
-        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          <span className="text-xl">💬</span> Additional Comments (Optional)
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-3">
+          <span className="text-2xl">💬</span> 
+          <span className="text-xl">Additional Comments</span>
         </h3>
         <textarea
           value={formData.comments}
           onChange={(e) => setFormData((prev) => ({ ...prev, comments: e.target.value }))}
           placeholder="Any additional feedback for the speaker..."
-          rows={3}
-          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          rows={5}
+          className="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors resize-y"
         />
       </div>
 
       {/* Error Message */}
       {errorMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {errorMessage}
+        <div className="bg-red-50 border-2 border-red-100 text-red-700 px-6 py-4 rounded-xl text-lg font-medium animate-pulse">
+          ⚠️ {errorMessage}
         </div>
       )}
 
       {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className={`w-full py-4 rounded-xl font-semibold text-lg transition ${
-          isSubmitting
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
-        }`}
-      >
-        {isSubmitting ? 'Submitting...' : 'Submit Evaluation'}
-      </button>
+      <div className="sticky bottom-4 z-10 pt-4 pb-2">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className={`w-full py-5 rounded-2xl font-bold text-xl transition-all shadow-xl ${
+            isSubmitting
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-blue-200'
+          }`}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Evaluation'}
+        </button>
+      </div>
     </form>
   );
 }
