@@ -201,6 +201,36 @@ export default function StatisticianReport({
     return parseInt(timeStr) || 0;
   };
 
+  // Stepper Component for Ah-Um
+  const CounterStepper = ({ 
+    label, 
+    value, 
+    onChange 
+  }: { 
+    label: string; 
+    value: number; 
+    onChange: (val: number) => void; 
+  }) => (
+    <div className="flex flex-col items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{label}</span>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => onChange(Math.max(0, value - 1))}
+          className="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 rounded-full text-gray-600 font-bold hover:bg-gray-100 active:scale-95 transition shadow-sm"
+        >
+          -
+        </button>
+        <span className="text-xl font-bold text-gray-900 w-8 text-center">{value}</span>
+        <button
+          onClick={() => onChange(value + 1)}
+          className="w-10 h-10 flex items-center justify-center bg-blue-100 border border-blue-200 rounded-full text-blue-700 font-bold hover:bg-blue-200 active:scale-95 transition shadow-sm"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+
   const tabs = [
     { id: 'ah_um' as const, label: 'Ah-Um Counter', icon: '🎤' },
     { id: 'grammarian' as const, label: 'Grammarian', icon: '📝' },
@@ -210,65 +240,65 @@ export default function StatisticianReport({
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-8">
-          <div className="text-gray-500">Loading reports...</div>
+        <div className="bg-white rounded-2xl p-8 shadow-2xl animate-pulse">
+          <div className="text-gray-500 text-lg font-medium">Loading reports...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex flex-col z-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div className="fixed inset-0 bg-white sm:bg-black/50 sm:flex sm:flex-col sm:items-center sm:justify-center z-50">
+      <div className="bg-white w-full h-full sm:h-[90vh] sm:max-w-3xl sm:rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+        
+        {/* Header */}
+        <div className="bg-white border-b px-4 py-4 flex items-center justify-between flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Statistician Reports</h2>
-            <p className="text-sm text-gray-500">{meetingName}</p>
+            <h2 className="text-xl font-bold text-gray-900">Statistician Reports</h2>
+            <p className="text-sm text-gray-500 truncate max-w-[200px]">{meetingName}</p>
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition"
+            className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
           >
-            Close
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex gap-1">
+        {/* Tabs */}
+        <div className="bg-gray-50 border-b overflow-x-auto flex-shrink-0">
+          <div className="flex px-4 min-w-max">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-medium transition border-b-2 ${
+                className={`flex-1 px-6 py-4 font-medium text-sm transition border-b-2 whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                    ? 'border-blue-600 text-blue-600 bg-white'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <span className="mr-2">{tab.icon}</span>
+                <span className="mr-2 text-lg">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto bg-gray-50">
-        <div className="max-w-4xl mx-auto p-4">
-          {/* Ah-Um Counter Tab */}
-          {activeTab === 'ah_um' && (
-            <div className="space-y-4">
-              {/* Form */}
-              <div className="bg-white rounded-xl shadow-sm border p-4">
-                <h3 className="font-semibold text-gray-800 mb-4">New Ah-Um Counter Report</h3>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Your Name (Counter)
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6">
+          <div className="max-w-2xl mx-auto space-y-6">
+            
+            {/* Ah-Um Counter Tab */}
+            {activeTab === 'ah_um' && (
+              <div className="space-y-6">
+                 {/* Reporter Name Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                  <h3 className="font-bold text-gray-800 text-lg mb-4">Ah-Um Counter</h3>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Your Name
                   </label>
                   <input
                     type="text"
@@ -276,151 +306,134 @@ export default function StatisticianReport({
                     onChange={(e) =>
                       setAhUmForm((prev) => ({ ...prev, reporter_name: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500"
                     placeholder="Enter your name"
                   />
                 </div>
 
-                {/* Entries */}
-                {ahUmForm.entries.length > 0 && (
-                  <div className="mb-4 overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="px-2 py-2 text-left text-gray-700 font-semibold">Speaker</th>
-                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">Ah/Um</th>
-                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">Like</th>
-                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">So</th>
-                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">But</th>
-                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">Other</th>
-                          <th className="px-2 py-2 text-center w-16 text-gray-700 font-semibold">Total</th>
-                          <th className="px-2 py-2 w-10"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ahUmForm.entries.map((entry, idx) => (
-                          <tr key={idx} className="border-t">
-                            <td className="px-2 py-2">
-                              <input
-                                type="text"
-                                value={entry.speaker_name}
-                                onChange={(e) => {
-                                  const newEntries = [...ahUmForm.entries];
-                                  newEntries[idx].speaker_name = e.target.value;
-                                  setAhUmForm((prev) => ({ ...prev, entries: newEntries }));
-                                }}
-                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
-                                placeholder="Name"
-                              />
-                            </td>
-                            {(['ah_um', 'like', 'so', 'but', 'other'] as const).map((field) => (
-                              <td key={field} className="px-2 py-2">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={entry[field]}
-                                  onChange={(e) => {
-                                    const newEntries = [...ahUmForm.entries];
-                                    newEntries[idx][field] = parseInt(e.target.value) || 0;
-                                    setAhUmForm((prev) => ({ ...prev, entries: newEntries }));
-                                  }}
-                                  className="w-full px-2 py-1 border rounded text-center text-gray-900 bg-white"
-                                />
-                              </td>
-                            ))}
-                            <td className="px-2 py-2 text-center font-medium text-gray-900">
-                              {entry.ah_um + entry.like + entry.so + entry.but + entry.other}
-                            </td>
-                            <td className="px-2 py-2">
-                              <button
-                                onClick={() => {
-                                  const newEntries = ahUmForm.entries.filter((_, i) => i !== idx);
-                                  setAhUmForm((prev) => ({ ...prev, entries: newEntries }));
-                                }}
-                                className="text-red-600 hover:text-red-800 font-bold"
-                              >
-                                ×
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                {/* Speakers List */}
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-800">Speakers</h3>
+                  <button
+                    onClick={addAhUmEntry}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm flex items-center gap-2"
+                  >
+                    <span>+</span> Add Speaker
+                  </button>
+                </div>
+
+                {ahUmForm.entries.length === 0 ? (
+                  <div className="text-center py-10 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">
+                    No speakers added.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {ahUmForm.entries.map((entry, idx) => (
+                      <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="bg-gray-50 px-5 py-3 border-b flex justify-between items-center">
+                          <input
+                            type="text"
+                            value={entry.speaker_name}
+                            onChange={(e) => {
+                              const newEntries = [...ahUmForm.entries];
+                              newEntries[idx].speaker_name = e.target.value;
+                              setAhUmForm((prev) => ({ ...prev, entries: newEntries }));
+                            }}
+                            className="bg-transparent font-bold text-gray-800 placeholder-gray-400 focus:outline-none w-full"
+                            placeholder="Enter Speaker Name..."
+                          />
+                          <button
+                            onClick={() => {
+                              const newEntries = ahUmForm.entries.filter((_, i) => i !== idx);
+                              setAhUmForm((prev) => ({ ...prev, entries: newEntries }));
+                            }}
+                            className="text-red-500 hover:text-red-700 ml-2"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                        
+                        <div className="p-4">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <CounterStepper 
+                              label="Ah/Um" 
+                              value={entry.ah_um} 
+                              onChange={(val) => {
+                                const newEntries = [...ahUmForm.entries];
+                                newEntries[idx].ah_um = val;
+                                setAhUmForm({ ...ahUmForm, entries: newEntries });
+                              }}
+                            />
+                            <CounterStepper 
+                              label="Like" 
+                              value={entry.like} 
+                              onChange={(val) => {
+                                const newEntries = [...ahUmForm.entries];
+                                newEntries[idx].like = val;
+                                setAhUmForm({ ...ahUmForm, entries: newEntries });
+                              }}
+                            />
+                            <CounterStepper 
+                              label="So" 
+                              value={entry.so} 
+                              onChange={(val) => {
+                                const newEntries = [...ahUmForm.entries];
+                                newEntries[idx].so = val;
+                                setAhUmForm({ ...ahUmForm, entries: newEntries });
+                              }}
+                            />
+                            <CounterStepper 
+                              label="But" 
+                              value={entry.but} 
+                              onChange={(val) => {
+                                const newEntries = [...ahUmForm.entries];
+                                newEntries[idx].but = val;
+                                setAhUmForm({ ...ahUmForm, entries: newEntries });
+                              }}
+                            />
+                            <CounterStepper 
+                              label="Other" 
+                              value={entry.other} 
+                              onChange={(val) => {
+                                const newEntries = [...ahUmForm.entries];
+                                newEntries[idx].other = val;
+                                setAhUmForm({ ...ahUmForm, entries: newEntries });
+                              }}
+                            />
+                             <div className="flex flex-col items-center justify-center p-3 bg-blue-50 rounded-xl border border-blue-100">
+                                <span className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-2">Total</span>
+                                <span className="text-2xl font-black text-blue-700">
+                                  {entry.ah_um + entry.like + entry.so + entry.but + entry.other}
+                                </span>
+                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={addAhUmEntry}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
-                  >
-                    + Add Speaker
-                  </button>
-                  <button
-                    onClick={saveAhUmReport}
-                    disabled={isSaving || !ahUmForm.reporter_name || ahUmForm.entries.length === 0}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm disabled:opacity-50"
-                  >
-                    {isSaving ? 'Saving...' : 'Save Report'}
-                  </button>
-                </div>
+                 <div className="pt-4 border-t">
+                    <button
+                        onClick={saveAhUmReport}
+                        disabled={isSaving || !ahUmForm.reporter_name || ahUmForm.entries.length === 0}
+                        className="w-full py-4 bg-blue-600 text-white text-xl font-bold rounded-xl hover:bg-blue-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSaving ? 'Saving...' : 'Submit Ah-Um Report'}
+                    </button>
+                 </div>
               </div>
+            )}
 
-              {/* Existing Reports */}
-              {ahUmReports.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border p-4">
-                  <h3 className="font-semibold text-gray-800 mb-4">Previous Reports</h3>
-                  {ahUmReports.map((report) => (
-                    <div key={report.id} className="border-t pt-4 mt-4 first:border-t-0 first:pt-0 first:mt-0">
-                      <div className="text-sm text-gray-500 mb-2">
-                        By: {report.reporter_name} •{' '}
-                        {new Date(report.created_at).toLocaleString()}
-                      </div>
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="px-2 py-1 text-left text-gray-700 font-semibold">Speaker</th>
-                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Ah/Um</th>
-                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Like</th>
-                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">So</th>
-                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">But</th>
-                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Other</th>
-                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {validateAhUmEntries(report.entries).map((entry, idx) => (
-                            <tr key={idx} className="border-t">
-                              <td className="px-2 py-1 text-gray-800">{entry.speaker_name}</td>
-                              <td className="px-2 py-1 text-center text-gray-800">{entry.ah_um}</td>
-                              <td className="px-2 py-1 text-center text-gray-800">{entry.like}</td>
-                              <td className="px-2 py-1 text-center text-gray-800">{entry.so}</td>
-                              <td className="px-2 py-1 text-center text-gray-800">{entry.but}</td>
-                              <td className="px-2 py-1 text-center text-gray-800">{entry.other}</td>
-                              <td className="px-2 py-1 text-center font-medium text-gray-900">
-                                {entry.ah_um + entry.like + entry.so + entry.but + entry.other}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Grammarian Tab */}
-          {activeTab === 'grammarian' && (
-            <div className="space-y-4">
-              {/* Form */}
-              <div className="bg-white rounded-xl shadow-sm border p-4">
-                <h3 className="font-semibold text-gray-800 mb-4">New Grammarian Report</h3>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
+            {/* Grammarian Tab */}
+            {activeTab === 'grammarian' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 space-y-4">
+                  <h3 className="font-bold text-gray-800 text-lg">Grammarian Info</h3>
+                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Your Name (Grammarian)
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
+                      Your Name
                     </label>
                     <input
                       type="text"
@@ -428,186 +441,178 @@ export default function StatisticianReport({
                       onChange={(e) =>
                         setGrammarianForm((prev) => ({ ...prev, reporter_name: e.target.value }))
                       }
-                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                      placeholder="Enter your name"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl"
+                      placeholder="Enter name"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Word of the Day
-                    </label>
-                    <input
-                      type="text"
-                      value={grammarianForm.word_of_day}
-                      onChange={(e) =>
-                        setGrammarianForm((prev) => ({ ...prev, word_of_day: e.target.value }))
-                      }
-                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                      placeholder="e.g., Serendipity"
-                    />
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
+                        Word of the Day
+                        </label>
+                        <input
+                        type="text"
+                        value={grammarianForm.word_of_day}
+                        onChange={(e) =>
+                            setGrammarianForm((prev) => ({ ...prev, word_of_day: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-blue-50 text-blue-800 font-bold"
+                        placeholder="e.g. Serendipity"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
+                        Definition
+                        </label>
+                        <input
+                        type="text"
+                        value={grammarianForm.word_of_day_definition}
+                        onChange={(e) =>
+                            setGrammarianForm((prev) => ({
+                            ...prev,
+                            word_of_day_definition: e.target.value,
+                            }))
+                        }
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl"
+                        placeholder="Meaning..."
+                        />
+                    </div>
                   </div>
                 </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Word Definition
-                  </label>
-                  <input
-                    type="text"
-                    value={grammarianForm.word_of_day_definition}
-                    onChange={(e) =>
-                      setGrammarianForm((prev) => ({
-                        ...prev,
-                        word_of_day_definition: e.target.value,
-                      }))
-                    }
-                    className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                    placeholder="Definition of the word"
-                  />
-                </div>
 
-                {/* Entries */}
-                {grammarianForm.entries.length > 0 && (
-                  <div className="mb-4 space-y-3">
-                    {grammarianForm.entries.map((entry, idx) => (
-                      <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex gap-2 mb-2">
-                          <input
-                            type="text"
-                            value={entry.speaker_name}
-                            onChange={(e) => {
-                              const newEntries = [...grammarianForm.entries];
-                              newEntries[idx].speaker_name = e.target.value;
-                              setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
-                            }}
-                            className="flex-1 px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                            placeholder="Speaker name"
-                          />
-                          <select
-                            value={entry.is_positive ? 'positive' : 'negative'}
-                            onChange={(e) => {
-                              const newEntries = [...grammarianForm.entries];
-                              newEntries[idx].is_positive = e.target.value === 'positive';
-                              setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
-                            }}
-                            className="px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                          >
-                            <option value="positive">✓ Good</option>
-                            <option value="negative">✗ Needs Work</option>
-                          </select>
-                          <button
-                            onClick={() => {
-                              const newEntries = grammarianForm.entries.filter((_, i) => i !== idx);
-                              setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
-                            }}
-                            className="px-3 py-2 text-red-600 hover:text-red-800 font-bold"
-                          >
-                            ×
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          value={entry.phrase}
-                          onChange={(e) => {
-                            const newEntries = [...grammarianForm.entries];
-                            newEntries[idx].phrase = e.target.value;
-                            setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
-                          }}
-                          className="w-full px-3 py-2 border rounded-lg mb-2 text-gray-900 bg-white"
-                          placeholder="Phrase or word used"
-                        />
-                        <input
-                          type="text"
-                          value={entry.comment}
-                          onChange={(e) => {
-                            const newEntries = [...grammarianForm.entries];
-                            newEntries[idx].comment = e.target.value;
-                            setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
-                          }}
-                          className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                          placeholder="Comment or correction"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex gap-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-800">Observations</h3>
                   <button
                     onClick={addGrammarEntry}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm flex items-center gap-2"
                   >
-                    + Add Entry
-                  </button>
-                  <button
-                    onClick={saveGrammarianReport}
-                    disabled={isSaving || !grammarianForm.reporter_name}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm disabled:opacity-50"
-                  >
-                    {isSaving ? 'Saving...' : 'Save Report'}
+                    <span>+</span> Add Entry
                   </button>
                 </div>
-              </div>
 
-              {/* Existing Reports */}
-              {grammarianReports.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border p-4">
-                  <h3 className="font-semibold text-gray-800 mb-4">Previous Reports</h3>
-                  {grammarianReports.map((report) => (
-                    <div key={report.id} className="border-t pt-4 mt-4 first:border-t-0 first:pt-0 first:mt-0">
-                      <div className="text-sm text-gray-500 mb-2">
-                        By: {report.reporter_name} •{' '}
-                        {new Date(report.created_at).toLocaleString()}
-                      </div>
-                      {report.word_of_day && (
-                        <div className="mb-3 p-3 bg-blue-50 rounded-lg">
-                          <span className="font-medium text-blue-800">
-                            Word of the Day: {report.word_of_day}
-                          </span>
-                          {report.word_of_day_definition && (
-                            <span className="text-blue-600 ml-2">
-                              - {report.word_of_day_definition}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      <div className="space-y-2">
-                        {validateGrammarEntries(report.entries).map((entry, idx) => (
-                          <div
-                            key={idx}
-                            className={`p-2 rounded border ${
-                              entry.is_positive ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className={entry.is_positive ? 'text-green-700 font-bold' : 'text-yellow-700 font-bold'}>
-                                {entry.is_positive ? '✓' : '✗'}
-                              </span>
-                              <span className="font-medium text-gray-900">{entry.speaker_name}</span>
-                              <span className="text-gray-700">- &quot;{entry.phrase}&quot;</span>
+                {grammarianForm.entries.length === 0 ? (
+                    <div className="text-center py-10 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">
+                    No observations added.
+                  </div>
+                ) : (
+                    <div className="space-y-4">
+                        {grammarianForm.entries.map((entry, idx) => (
+                            <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-4">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="font-bold text-gray-400 text-sm uppercase">Entry #{idx + 1}</h4>
+                                    <button
+                                        onClick={() => {
+                                            const newEntries = grammarianForm.entries.filter((_, i) => i !== idx);
+                                            setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
+                                        }}
+                                        className="text-red-500 hover:text-red-700"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                                
+                                <div className="flex bg-gray-100 rounded-lg p-1">
+                                    <button
+                                        onClick={() => {
+                                            const newEntries = [...grammarianForm.entries];
+                                            newEntries[idx].is_positive = true;
+                                            setGrammarianForm({ ...grammarianForm, entries: newEntries });
+                                        }}
+                                        className={`flex-1 py-2 rounded-md text-sm font-bold transition ${
+                                            entry.is_positive 
+                                            ? 'bg-white text-green-700 shadow-sm' 
+                                            : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                    >
+                                        Good Usage
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const newEntries = [...grammarianForm.entries];
+                                            newEntries[idx].is_positive = false;
+                                            setGrammarianForm({ ...grammarianForm, entries: newEntries });
+                                        }}
+                                        className={`flex-1 py-2 rounded-md text-sm font-bold transition ${
+                                            !entry.is_positive 
+                                            ? 'bg-white text-orange-600 shadow-sm' 
+                                            : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                    >
+                                        Needs Work
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Speaker</label>
+                                        <input
+                                            type="text"
+                                            value={entry.speaker_name}
+                                            onChange={(e) => {
+                                                const newEntries = [...grammarianForm.entries];
+                                                newEntries[idx].speaker_name = e.target.value;
+                                                setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
+                                            }}
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                            placeholder="Who spoke?"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Phrase/Word</label>
+                                        <input
+                                            type="text"
+                                            value={entry.phrase}
+                                            onChange={(e) => {
+                                                const newEntries = [...grammarianForm.entries];
+                                                newEntries[idx].phrase = e.target.value;
+                                                setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
+                                            }}
+                                            className="w-full px-3 py-2 border rounded-lg font-medium"
+                                            placeholder="What did they say?"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Comment</label>
+                                        <input
+                                            type="text"
+                                            value={entry.comment}
+                                            onChange={(e) => {
+                                                const newEntries = [...grammarianForm.entries];
+                                                newEntries[idx].comment = e.target.value;
+                                                setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
+                                            }}
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                            placeholder="Correction or note..."
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            {entry.comment && (
-                              <div className="text-sm text-gray-600 ml-6">{entry.comment}</div>
-                            )}
-                          </div>
                         ))}
-                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                )}
 
-          {/* Timer Tab */}
-          {activeTab === 'timer' && (
-            <div className="space-y-4">
-              {/* Form */}
-              <div className="bg-white rounded-xl shadow-sm border p-4">
-                <h3 className="font-semibold text-gray-800 mb-4">New Timer Report</h3>
-                <div className="grid md:grid-cols-3 gap-4 mb-4">
+                <div className="pt-4 border-t">
+                    <button
+                        onClick={saveGrammarianReport}
+                        disabled={isSaving || !grammarianForm.reporter_name}
+                        className="w-full py-4 bg-blue-600 text-white text-xl font-bold rounded-xl hover:bg-blue-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSaving ? 'Saving...' : 'Submit Grammarian Report'}
+                    </button>
+                 </div>
+              </div>
+            )}
+
+            {/* Timer Tab */}
+            {activeTab === 'timer' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 space-y-4">
+                  <h3 className="font-bold text-gray-800 text-lg">Timer Info</h3>
+                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Your Name (Timer)
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
+                      Your Name
                     </label>
                     <input
                       type="text"
@@ -615,213 +620,173 @@ export default function StatisticianReport({
                       onChange={(e) =>
                         setTimerForm((prev) => ({ ...prev, reporter_name: e.target.value }))
                       }
-                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                      placeholder="Enter your name"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl"
+                      placeholder="Enter name"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Meeting Start
-                    </label>
-                    <input
-                      type="time"
-                      value={timerForm.meeting_start}
-                      onChange={(e) =>
-                        setTimerForm((prev) => ({ ...prev, meeting_start: e.target.value }))
-                      }
-                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Meeting End
-                    </label>
-                    <input
-                      type="time"
-                      value={timerForm.meeting_end}
-                      onChange={(e) =>
-                        setTimerForm((prev) => ({ ...prev, meeting_end: e.target.value }))
-                      }
-                      className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                    />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">
+                        Meeting Start
+                      </label>
+                      <input
+                        type="time"
+                        value={timerForm.meeting_start}
+                        onChange={(e) =>
+                          setTimerForm((prev) => ({ ...prev, meeting_start: e.target.value }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">
+                        Meeting End
+                      </label>
+                      <input
+                        type="time"
+                        value={timerForm.meeting_end}
+                        onChange={(e) =>
+                          setTimerForm((prev) => ({ ...prev, meeting_end: e.target.value }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Entries */}
-                {timerForm.entries.length > 0 && (
-                  <div className="mb-4 overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="px-2 py-2 text-left text-gray-700 font-semibold">Role</th>
-                          <th className="px-2 py-2 text-left text-gray-700 font-semibold">Speaker</th>
-                          <th className="px-2 py-2 text-left text-gray-700 font-semibold">Title/Topic</th>
-                          <th className="px-2 py-2 text-center w-24 text-gray-700 font-semibold">Time (m:ss)</th>
-                          <th className="px-2 py-2 text-center w-24 text-gray-700 font-semibold">Status</th>
-                          <th className="px-2 py-2 w-10"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {timerForm.entries.map((entry, idx) => (
-                          <tr key={idx} className="border-t">
-                            <td className="px-2 py-2">
-                              <select
-                                value={entry.role}
-                                onChange={(e) => {
-                                  const newEntries = [...timerForm.entries];
-                                  newEntries[idx].role = e.target.value;
-                                  setTimerForm((prev) => ({ ...prev, entries: newEntries }));
-                                }}
-                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
-                              >
-                                <option value="">Select role</option>
-                                {MEETING_ROLES.map((role) => (
-                                  <option key={role} value={role}>
-                                    {role}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="px-2 py-2">
-                              <input
-                                type="text"
-                                value={entry.speaker_name}
-                                onChange={(e) => {
-                                  const newEntries = [...timerForm.entries];
-                                  newEntries[idx].speaker_name = e.target.value;
-                                  setTimerForm((prev) => ({ ...prev, entries: newEntries }));
-                                }}
-                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
-                                placeholder="Name"
-                              />
-                            </td>
-                            <td className="px-2 py-2">
-                              <input
-                                type="text"
-                                value={entry.title_topic}
-                                onChange={(e) => {
-                                  const newEntries = [...timerForm.entries];
-                                  newEntries[idx].title_topic = e.target.value;
-                                  setTimerForm((prev) => ({ ...prev, entries: newEntries }));
-                                }}
-                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
-                                placeholder="Title"
-                              />
-                            </td>
-                            <td className="px-2 py-2">
-                              <input
-                                type="text"
-                                value={formatTime(entry.duration_seconds)}
-                                onChange={(e) => {
-                                  const newEntries = [...timerForm.entries];
-                                  newEntries[idx].duration_seconds = parseTime(e.target.value);
-                                  setTimerForm((prev) => ({ ...prev, entries: newEntries }));
-                                }}
-                                className="w-full px-2 py-1 border rounded text-center text-gray-900 bg-white"
-                                placeholder="0:00"
-                              />
-                            </td>
-                            <td className="px-2 py-2">
-                              <select
-                                value={entry.status}
-                                onChange={(e) => {
-                                  const newEntries = [...timerForm.entries];
-                                  newEntries[idx].status = e.target.value as TimerEntry['status'];
-                                  setTimerForm((prev) => ({ ...prev, entries: newEntries }));
-                                }}
-                                className="w-full px-2 py-1 border rounded text-gray-900 bg-white"
-                              >
-                                <option value="green">🟢 Green</option>
-                                <option value="yellow">🟡 Yellow</option>
-                                <option value="red">🔴 Red</option>
-                                <option value="over">⚫ Over</option>
-                              </select>
-                            </td>
-                            <td className="px-2 py-2">
-                              <button
-                                onClick={() => {
-                                  const newEntries = timerForm.entries.filter((_, i) => i !== idx);
-                                  setTimerForm((prev) => ({ ...prev, entries: newEntries }));
-                                }}
-                                className="text-red-600 hover:text-red-800 font-bold"
-                              >
-                                ×
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-800">Timing Entries</h3>
                   <button
                     onClick={addTimerEntry}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm flex items-center gap-2"
                   >
-                    + Add Entry
-                  </button>
-                  <button
-                    onClick={saveTimerReport}
-                    disabled={isSaving || !timerForm.reporter_name}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm disabled:opacity-50"
-                  >
-                    {isSaving ? 'Saving...' : 'Save Report'}
+                    <span>+</span> Add Entry
                   </button>
                 </div>
-              </div>
 
-              {/* Existing Reports */}
-              {timerReports.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border p-4">
-                  <h3 className="font-semibold text-gray-800 mb-4">Previous Reports</h3>
-                  {timerReports.map((report) => (
-                    <div key={report.id} className="border-t pt-4 mt-4 first:border-t-0 first:pt-0 first:mt-0">
-                      <div className="text-sm text-gray-500 mb-2">
-                        By: {report.reporter_name} •{' '}
-                        {new Date(report.created_at).toLocaleString()}
-                        {report.meeting_start && report.meeting_end && (
-                          <span className="ml-2">
-                            ({report.meeting_start} - {report.meeting_end})
-                          </span>
-                        )}
-                      </div>
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="px-2 py-1 text-left text-gray-700 font-semibold">Role</th>
-                            <th className="px-2 py-1 text-left text-gray-700 font-semibold">Speaker</th>
-                            <th className="px-2 py-1 text-left text-gray-700 font-semibold">Title/Topic</th>
-                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Time</th>
-                            <th className="px-2 py-1 text-center text-gray-700 font-semibold">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {validateTimerEntries(report.entries).map((entry, idx) => (
-                            <tr key={idx} className="border-t">
-                              <td className="px-2 py-1 text-gray-800">{entry.role}</td>
-                              <td className="px-2 py-1 text-gray-800">{entry.speaker_name}</td>
-                              <td className="px-2 py-1 text-gray-800">{entry.title_topic}</td>
-                              <td className="px-2 py-1 text-center text-gray-900 font-medium">
-                                {formatTime(entry.duration_seconds)}
-                              </td>
-                              <td className="px-2 py-1 text-center">
-                                {entry.status === 'green' && '🟢'}
-                                {entry.status === 'yellow' && '🟡'}
-                                {entry.status === 'red' && '🔴'}
-                                {entry.status === 'over' && '⚫'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                {timerForm.entries.length === 0 ? (
+                    <div className="text-center py-10 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">
+                    No timing entries added.
+                  </div>
+                ) : (
+                    <div className="space-y-4">
+                        {timerForm.entries.map((entry, idx) => (
+                             <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-4">
+                                <div className="flex justify-between items-center border-b pb-3 mb-3">
+                                    <select
+                                        value={entry.role}
+                                        onChange={(e) => {
+                                            const newEntries = [...timerForm.entries];
+                                            newEntries[idx].role = e.target.value;
+                                            setTimerForm((prev) => ({ ...prev, entries: newEntries }));
+                                        }}
+                                        className="bg-transparent font-bold text-gray-800 focus:outline-none"
+                                    >
+                                        <option value="">Select Role...</option>
+                                        {MEETING_ROLES.map((role) => (
+                                            <option key={role} value={role}>{role}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        onClick={() => {
+                                            const newEntries = timerForm.entries.filter((_, i) => i !== idx);
+                                            setTimerForm((prev) => ({ ...prev, entries: newEntries }));
+                                        }}
+                                        className="text-red-500 hover:text-red-700"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Speaker</label>
+                                        <input
+                                            type="text"
+                                            value={entry.speaker_name}
+                                            onChange={(e) => {
+                                                const newEntries = [...timerForm.entries];
+                                                newEntries[idx].speaker_name = e.target.value;
+                                                setTimerForm((prev) => ({ ...prev, entries: newEntries }));
+                                            }}
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                            placeholder="Name"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Title/Topic</label>
+                                        <input
+                                            type="text"
+                                            value={entry.title_topic}
+                                            onChange={(e) => {
+                                                const newEntries = [...timerForm.entries];
+                                                newEntries[idx].title_topic = e.target.value;
+                                                setTimerForm((prev) => ({ ...prev, entries: newEntries }));
+                                            }}
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                            placeholder="Topic"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
+                                    <div className="flex-1">
+                                         <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Time (m:ss)</label>
+                                         <input
+                                            type="text"
+                                            value={formatTime(entry.duration_seconds)}
+                                            onChange={(e) => {
+                                                const newEntries = [...timerForm.entries];
+                                                newEntries[idx].duration_seconds = parseTime(e.target.value);
+                                                setTimerForm((prev) => ({ ...prev, entries: newEntries }));
+                                            }}
+                                            className="w-full px-3 py-2 border rounded-lg text-center font-mono font-bold text-xl"
+                                            placeholder="0:00"
+                                        />
+                                    </div>
+                                    <div className="flex-[2] flex gap-1">
+                                        {[
+                                            { val: 'green', label: '🟢', bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
+                                            { val: 'yellow', label: '🟡', bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-300' },
+                                            { val: 'red', label: '🔴', bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
+                                            { val: 'over', label: '⚫', bg: 'bg-gray-200', text: 'text-gray-700', border: 'border-gray-400' }
+                                        ].map((status) => (
+                                            <button
+                                                key={status.val}
+                                                onClick={() => {
+                                                    const newEntries = [...timerForm.entries];
+                                                    newEntries[idx].status = status.val as TimerEntry['status'];
+                                                    setTimerForm((prev) => ({ ...prev, entries: newEntries }));
+                                                }}
+                                                className={`flex-1 py-3 rounded-lg text-xl border-2 transition ${
+                                                    entry.status === status.val 
+                                                    ? `${status.bg} ${status.border} shadow-inner scale-95` 
+                                                    : 'bg-white border-gray-100 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {status.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                             </div>
+                        ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                )}
+
+                <div className="pt-4 border-t">
+                    <button
+                        onClick={saveTimerReport}
+                        disabled={isSaving || !timerForm.reporter_name}
+                        className="w-full py-4 bg-blue-600 text-white text-xl font-bold rounded-xl hover:bg-blue-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSaving ? 'Saving...' : 'Submit Timer Report'}
+                    </button>
+                 </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
