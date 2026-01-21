@@ -174,11 +174,11 @@ export default function GeneralEvaluatorReport({
   // Render rating stars
   const renderRatingStars = (rating: number) => {
     return (
-      <div className="flex gap-0.5">
+      <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <span
             key={star}
-            className={star <= rating ? 'text-yellow-500' : 'text-gray-300'}
+            className={`text-lg ${star <= rating ? 'text-yellow-500' : 'text-gray-300'}`}
           >
             ★
           </span>
@@ -195,522 +195,406 @@ export default function GeneralEvaluatorReport({
     value: number;
     onChange: (rating: 1 | 2 | 3 | 4 | 5) => void;
   }) => (
-    <div className="flex items-center gap-2">
-      <div className="flex gap-1">
+    <div className="space-y-2">
+      <div className="flex gap-2 justify-between max-w-sm">
         {([1, 2, 3, 4, 5] as const).map((rating) => (
           <button
             key={rating}
             type="button"
             onClick={() => onChange(rating)}
-            className={`w-8 h-8 rounded-full border-2 font-medium transition ${
+            className={`w-12 h-12 rounded-xl border-2 text-lg font-bold transition-all ${
               value === rating
-                ? 'border-blue-600 bg-blue-600 text-white'
-                : 'border-gray-300 text-gray-600 hover:border-blue-400'
+                ? 'border-blue-600 bg-blue-600 text-white shadow-md transform scale-110'
+                : 'border-gray-200 text-gray-600 hover:border-blue-400 hover:bg-blue-50'
             }`}
           >
             {rating}
           </button>
         ))}
       </div>
-      <span className="text-sm text-gray-600">
+      <p className="text-sm font-medium text-blue-600">
         {SCORE_LABELS[value as keyof typeof SCORE_LABELS]}
-      </span>
+      </p>
     </div>
   );
 
   const tabs = [
     { id: 'evaluators' as const, label: 'Speech Evaluators', icon: '🎯' },
     { id: 'functionaries' as const, label: 'Functionaries', icon: '⚙️' },
-    { id: 'meeting' as const, label: 'Meeting Summary', icon: '📋' },
+    { id: 'meeting' as const, label: 'Summary', icon: '📋' },
   ];
 
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-8">
-          <div className="text-gray-500">Loading reports...</div>
+        <div className="bg-white rounded-2xl p-8 shadow-2xl animate-pulse">
+          <div className="text-gray-500 text-lg font-medium">Loading reports...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex flex-col z-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div className="fixed inset-0 bg-white sm:bg-black/50 sm:flex sm:flex-col sm:items-center sm:justify-center z-50">
+      <div className="bg-white w-full h-full sm:h-[90vh] sm:max-w-3xl sm:rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+        
+        {/* Header */}
+        <div className="bg-white border-b px-4 py-4 flex items-center justify-between flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">General Evaluator Report</h2>
-            <p className="text-sm text-gray-500">{meetingName}</p>
+            <h2 className="text-xl font-bold text-gray-900">GE Report</h2>
+            <p className="text-sm text-gray-500 truncate max-w-[200px]">{meetingName}</p>
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition"
+            className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
           >
-            Close
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex gap-1">
+        {/* Tabs */}
+        <div className="bg-gray-50 border-b overflow-x-auto flex-shrink-0">
+          <div className="flex px-4 min-w-max">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-medium transition border-b-2 ${
+                className={`flex-1 px-6 py-4 font-medium text-sm transition border-b-2 whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                    ? 'border-blue-600 text-blue-600 bg-white'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <span className="mr-2">{tab.icon}</span>
+                <span className="mr-2 text-lg">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto bg-gray-50">
-        <div className="max-w-4xl mx-auto p-4">
-          {/* Reporter Name (shown on all tabs) */}
-          <div className="bg-white rounded-xl shadow-sm border p-4 mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Your Name (General Evaluator)
-            </label>
-            <input
-              type="text"
-              value={form.reporter_name}
-              onChange={(e) => setForm((prev) => ({ ...prev, reporter_name: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-              placeholder="Enter your name"
-            />
-          </div>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6">
+          <div className="max-w-2xl mx-auto space-y-6">
+            
+            {/* Reporter Name (Always visible on top if empty, or just in first tab? Let's put it in Meeting Summary or keep global?) 
+                Let's keep it global but card based. */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <label className="block text-lg font-bold text-gray-800 mb-2">
+                Your Name
+              </label>
+              <input
+                type="text"
+                value={form.reporter_name}
+                onChange={(e) => setForm((prev) => ({ ...prev, reporter_name: e.target.value }))}
+                className="w-full px-4 py-3 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-colors"
+                placeholder="Enter General Evaluator's name"
+              />
+            </div>
 
-          {/* Speech Evaluators Tab */}
-          {activeTab === 'evaluators' && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-xl shadow-sm border p-4">
-                <h3 className="font-semibold text-gray-800 mb-4">Evaluate Speech Evaluators</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Provide feedback for each speech evaluator in this meeting.
-                </p>
+            {/* Speech Evaluators Tab */}
+            {activeTab === 'evaluators' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-800 text-lg">Evaluators</h3>
+                  <button
+                    onClick={addEvaluatorFeedback}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm flex items-center gap-2"
+                  >
+                    <span>+</span> Add Evaluator
+                  </button>
+                </div>
 
-                {form.evaluator_feedbacks.length > 0 && (
-                  <div className="space-y-4 mb-4">
+                {form.evaluator_feedbacks.length === 0 ? (
+                  <div className="text-center py-10 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">
+                    No evaluators added yet. Tap the button above.
+                  </div>
+                ) : (
+                  <div className="space-y-6">
                     {form.evaluator_feedbacks.map((feedback, idx) => (
-                      <div key={idx} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex justify-between items-start mb-3">
-                          <span className="text-sm font-medium text-gray-700">
-                            Evaluator #{idx + 1}
-                          </span>
+                      <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="bg-gray-50 px-5 py-3 border-b flex justify-between items-center">
+                          <span className="font-bold text-gray-700">Evaluator #{idx + 1}</span>
                           <button
                             onClick={() => removeEvaluatorFeedback(idx)}
-                            className="text-red-600 hover:text-red-800 font-bold"
+                            className="text-red-600 hover:text-red-700 font-medium text-sm px-2 py-1"
                           >
-                            ×
+                            Remove
                           </button>
                         </div>
+                        
+                        <div className="p-5 space-y-5">
+                          <div className="grid sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700 mb-1">
+                                Evaluator Name
+                              </label>
+                              <input
+                                type="text"
+                                value={feedback.evaluator_name}
+                                onChange={(e) =>
+                                  updateEvaluatorFeedback(idx, 'evaluator_name', e.target.value)
+                                }
+                                className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100"
+                                placeholder="Name"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700 mb-1">
+                                Speaker Evaluated
+                              </label>
+                              <input
+                                type="text"
+                                value={feedback.speaker_evaluated}
+                                onChange={(e) =>
+                                  updateEvaluatorFeedback(idx, 'speaker_evaluated', e.target.value)
+                                }
+                                className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100"
+                                placeholder="Speaker"
+                              />
+                            </div>
+                          </div>
 
-                        <div className="grid md:grid-cols-2 gap-3 mb-3">
                           <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Evaluator Name
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                              Rating
                             </label>
-                            <input
-                              type="text"
-                              value={feedback.evaluator_name}
-                              onChange={(e) =>
-                                updateEvaluatorFeedback(idx, 'evaluator_name', e.target.value)
-                              }
-                              className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                              placeholder="Name of the evaluator"
+                            <RatingSelector
+                              value={feedback.rating}
+                              onChange={(rating) => updateEvaluatorFeedback(idx, 'rating', rating)}
                             />
                           </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Speaker They Evaluated
-                            </label>
-                            <input
-                              type="text"
-                              value={feedback.speaker_evaluated}
-                              onChange={(e) =>
-                                updateEvaluatorFeedback(idx, 'speaker_evaluated', e.target.value)
-                              }
-                              className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                              placeholder="Name of the speaker"
-                            />
+
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700 mb-1">Strengths</label>
+                              <textarea
+                                value={feedback.strengths}
+                                onChange={(e) => updateEvaluatorFeedback(idx, 'strengths', e.target.value)}
+                                className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100"
+                                rows={2}
+                                placeholder="What went well?"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700 mb-1">Areas to Improve</label>
+                              <textarea
+                                value={feedback.areas_to_improve}
+                                onChange={(e) => updateEvaluatorFeedback(idx, 'areas_to_improve', e.target.value)}
+                                className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100"
+                                rows={2}
+                                placeholder="Suggestions?"
+                              />
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Rating
-                          </label>
-                          <RatingSelector
-                            value={feedback.rating}
-                            onChange={(rating) => updateEvaluatorFeedback(idx, 'rating', rating)}
-                          />
-                        </div>
-
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Strengths
-                          </label>
-                          <textarea
-                            value={feedback.strengths}
-                            onChange={(e) =>
-                              updateEvaluatorFeedback(idx, 'strengths', e.target.value)
-                            }
-                            className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                            rows={2}
-                            placeholder="What did they do well?"
-                          />
-                        </div>
-
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Areas to Improve
-                          </label>
-                          <textarea
-                            value={feedback.areas_to_improve}
-                            onChange={(e) =>
-                              updateEvaluatorFeedback(idx, 'areas_to_improve', e.target.value)
-                            }
-                            className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                            rows={2}
-                            placeholder="What could they work on?"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Additional Comments
-                          </label>
-                          <textarea
-                            value={feedback.comments}
-                            onChange={(e) =>
-                              updateEvaluatorFeedback(idx, 'comments', e.target.value)
-                            }
-                            className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                            rows={2}
-                            placeholder="Any other observations"
-                          />
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-
-                <button
-                  onClick={addEvaluatorFeedback}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
-                >
-                  + Add Evaluator
-                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Functionaries Tab */}
-          {activeTab === 'functionaries' && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-xl shadow-sm border p-4">
-                <h3 className="font-semibold text-gray-800 mb-4">Evaluate Meeting Functionaries</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Provide feedback for Timer, Grammarian, Ah-Um Counter, and other functionaries.
-                </p>
+            {/* Functionaries Tab */}
+            {activeTab === 'functionaries' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-800 text-lg">Functionaries</h3>
+                  <button
+                    onClick={addFunctionaryFeedback}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm flex items-center gap-2"
+                  >
+                    <span>+</span> Add Role
+                  </button>
+                </div>
 
-                {form.functionary_feedbacks.length > 0 && (
-                  <div className="space-y-4 mb-4">
+                {form.functionary_feedbacks.length === 0 ? (
+                  <div className="text-center py-10 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">
+                    No functionaries added yet.
+                  </div>
+                ) : (
+                  <div className="space-y-6">
                     {form.functionary_feedbacks.map((feedback, idx) => (
-                      <div key={idx} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex justify-between items-start mb-3">
-                          <span className="text-sm font-medium text-gray-700">
-                            Functionary #{idx + 1}
-                          </span>
+                      <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="bg-gray-50 px-5 py-3 border-b flex justify-between items-center">
+                          <span className="font-bold text-gray-700">Role #{idx + 1}</span>
                           <button
                             onClick={() => removeFunctionaryFeedback(idx)}
-                            className="text-red-600 hover:text-red-800 font-bold"
+                            className="text-red-600 hover:text-red-700 font-medium text-sm px-2 py-1"
                           >
-                            ×
+                            Remove
                           </button>
                         </div>
-
-                        <div className="grid md:grid-cols-2 gap-3 mb-3">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Role
-                            </label>
-                            <select
-                              value={feedback.role}
-                              onChange={(e) =>
-                                updateFunctionaryFeedback(idx, 'role', e.target.value)
-                              }
-                              className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                            >
-                              {FUNCTIONARY_ROLES.map((role) => (
-                                <option key={role} value={role}>
-                                  {role}
-                                </option>
-                              ))}
-                            </select>
+                        
+                        <div className="p-5 space-y-5">
+                          <div className="grid sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700 mb-1">
+                                Role
+                              </label>
+                              <select
+                                value={feedback.role}
+                                onChange={(e) =>
+                                  updateFunctionaryFeedback(idx, 'role', e.target.value)
+                                }
+                                className="w-full px-3 py-3 border border-gray-200 rounded-lg bg-white"
+                              >
+                                {FUNCTIONARY_ROLES.map((role) => (
+                                  <option key={role} value={role}>
+                                    {role}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700 mb-1">
+                                Person Name
+                              </label>
+                              <input
+                                type="text"
+                                value={feedback.person_name}
+                                onChange={(e) =>
+                                  updateFunctionaryFeedback(idx, 'person_name', e.target.value)
+                                }
+                                className="w-full px-3 py-3 border border-gray-200 rounded-lg"
+                                placeholder="Name"
+                              />
+                            </div>
                           </div>
+
                           <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Person Name
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                              Rating
                             </label>
-                            <input
-                              type="text"
-                              value={feedback.person_name}
-                              onChange={(e) =>
-                                updateFunctionaryFeedback(idx, 'person_name', e.target.value)
+                            <RatingSelector
+                              value={feedback.rating}
+                              onChange={(rating) =>
+                                updateFunctionaryFeedback(idx, 'rating', rating)
                               }
-                              className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                              placeholder="Name of the functionary"
                             />
                           </div>
-                        </div>
 
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Rating
-                          </label>
-                          <RatingSelector
-                            value={feedback.rating}
-                            onChange={(rating) =>
-                              updateFunctionaryFeedback(idx, 'rating', rating)
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Feedback
-                          </label>
-                          <textarea
-                            value={feedback.feedback}
-                            onChange={(e) =>
-                              updateFunctionaryFeedback(idx, 'feedback', e.target.value)
-                            }
-                            className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                            rows={3}
-                            placeholder="How did they perform their role?"
-                          />
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
+                              Feedback
+                            </label>
+                            <textarea
+                              value={feedback.feedback}
+                              onChange={(e) =>
+                                updateFunctionaryFeedback(idx, 'feedback', e.target.value)
+                              }
+                              className="w-full px-3 py-3 border border-gray-200 rounded-lg"
+                              rows={3}
+                              placeholder="How did they perform?"
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-
-                <button
-                  onClick={addFunctionaryFeedback}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
-                >
-                  + Add Functionary
-                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Meeting Summary Tab */}
-          {activeTab === 'meeting' && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-xl shadow-sm border p-4">
-                <h3 className="font-semibold text-gray-800 mb-4">Meeting Summary</h3>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Meeting Highlights
-                  </label>
-                  <textarea
-                    value={form.meeting_highlights}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, meeting_highlights: e.target.value }))
-                    }
-                    className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                    rows={3}
-                    placeholder="What went well in this meeting?"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Areas for Improvement
-                  </label>
-                  <textarea
-                    value={form.meeting_improvements}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, meeting_improvements: e.target.value }))
-                    }
-                    className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                    rows={3}
-                    placeholder="What could be improved in future meetings?"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Overall Comments
-                  </label>
-                  <textarea
-                    value={form.overall_comments}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, overall_comments: e.target.value }))
-                    }
-                    className="w-full px-3 py-2 border rounded-lg text-gray-900 bg-white"
-                    rows={3}
-                    placeholder="Any other observations about the meeting"
-                  />
-                </div>
-
-                <button
-                  onClick={saveReport}
-                  disabled={isSaving || !form.reporter_name}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {isSaving ? 'Saving...' : 'Save Complete Report'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Previous Reports */}
-          {reports.length > 0 && (
-            <div className="mt-6 bg-white rounded-xl shadow-sm border p-4">
-              <h3 className="font-semibold text-gray-800 mb-4">Previous Reports</h3>
-              {reports.map((report) => (
-                <div
-                  key={report.id}
-                  className="border-t pt-4 mt-4 first:border-t-0 first:pt-0 first:mt-0"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="text-sm text-gray-500">
-                      By: {report.reporter_name} •{' '}
-                      {new Date(report.created_at).toLocaleString()}
-                    </div>
-                    <button
-                      onClick={() => deleteReport(report.id)}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium"
-                    >
-                      Delete
-                    </button>
+            {/* Meeting Summary Tab */}
+            {activeTab === 'meeting' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+                  <h3 className="font-bold text-gray-800 text-xl mb-2">Meeting Overview</h3>
+                  
+                  <div>
+                    <label className="block text-lg font-bold text-gray-700 mb-2">
+                      Highlights
+                    </label>
+                    <textarea
+                      value={form.meeting_highlights}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, meeting_highlights: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 text-lg"
+                      rows={3}
+                      placeholder="Best moments..."
+                    />
                   </div>
 
-                  {/* Evaluator Feedbacks */}
-                  {validateEvaluatorFeedbacks(report.evaluator_feedbacks).length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">
-                        Speech Evaluator Feedback
-                      </h4>
-                      <div className="space-y-2">
-                        {validateEvaluatorFeedbacks(report.evaluator_feedbacks).map(
-                          (feedback, idx) => (
-                            <div
-                              key={idx}
-                              className="p-3 bg-blue-50 rounded-lg border border-blue-200"
-                            >
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-gray-900">
-                                  {feedback.evaluator_name}
-                                </span>
-                                <span className="text-gray-500">→</span>
-                                <span className="text-gray-700">
-                                  {feedback.speaker_evaluated}
-                                </span>
-                                <div className="ml-auto">
-                                  {renderRatingStars(feedback.rating)}
-                                </div>
-                              </div>
-                              {feedback.strengths && (
-                                <div className="text-sm text-green-700">
-                                  <strong>Strengths:</strong> {feedback.strengths}
-                                </div>
-                              )}
-                              {feedback.areas_to_improve && (
-                                <div className="text-sm text-orange-700">
-                                  <strong>To Improve:</strong> {feedback.areas_to_improve}
-                                </div>
-                              )}
-                              {feedback.comments && (
-                                <div className="text-sm text-gray-600">
-                                  {feedback.comments}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-lg font-bold text-gray-700 mb-2">
+                      Improvements
+                    </label>
+                    <textarea
+                      value={form.meeting_improvements}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, meeting_improvements: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 text-lg"
+                      rows={3}
+                      placeholder="What to change?"
+                    />
+                  </div>
 
-                  {/* Functionary Feedbacks */}
-                  {validateFunctionaryFeedbacks(report.functionary_feedbacks).length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">
-                        Functionary Feedback
-                      </h4>
-                      <div className="space-y-2">
-                        {validateFunctionaryFeedbacks(report.functionary_feedbacks).map(
-                          (feedback, idx) => (
-                            <div
-                              key={idx}
-                              className="p-3 bg-purple-50 rounded-lg border border-purple-200"
-                            >
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="px-2 py-0.5 bg-purple-200 text-purple-800 rounded text-xs font-medium">
-                                  {feedback.role}
-                                </span>
-                                <span className="font-medium text-gray-900">
-                                  {feedback.person_name}
-                                </span>
-                                <div className="ml-auto">
-                                  {renderRatingStars(feedback.rating)}
-                                </div>
-                              </div>
-                              {feedback.feedback && (
-                                <div className="text-sm text-gray-700">{feedback.feedback}</div>
-                              )}
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-lg font-bold text-gray-700 mb-2">
+                      Overall Comments
+                    </label>
+                    <textarea
+                      value={form.overall_comments}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, overall_comments: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 text-lg"
+                      rows={3}
+                      placeholder="Final thoughts..."
+                    />
+                  </div>
 
-                  {/* Meeting Summary */}
-                  {(report.meeting_highlights ||
-                    report.meeting_improvements ||
-                    report.overall_comments) && (
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      {report.meeting_highlights && (
-                        <div className="mb-2">
-                          <strong className="text-sm text-gray-700">Highlights:</strong>
-                          <p className="text-sm text-gray-800">{report.meeting_highlights}</p>
-                        </div>
-                      )}
-                      {report.meeting_improvements && (
-                        <div className="mb-2">
-                          <strong className="text-sm text-gray-700">To Improve:</strong>
-                          <p className="text-sm text-gray-800">{report.meeting_improvements}</p>
-                        </div>
-                      )}
-                      {report.overall_comments && (
-                        <div>
-                          <strong className="text-sm text-gray-700">Overall:</strong>
-                          <p className="text-sm text-gray-800">{report.overall_comments}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <button
+                    onClick={saveReport}
+                    disabled={isSaving || !form.reporter_name}
+                    className="w-full py-4 bg-blue-600 text-white text-xl font-bold rounded-xl hover:bg-blue-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSaving ? 'Saving...' : 'Submit GE Report'}
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            )}
+
+            {/* Previous Reports List (visible at bottom of 'Summary' or distinct section?)
+                Let's move it to a distinct section below the tabs content area so it doesn't clutter the tabs. 
+                Actually, putting it in 'meeting' tab or a separate toggle is better for mobile.
+                For now, I'll append it at the bottom if any exist.
+             */}
+            {reports.length > 0 && (
+              <div className="pt-8 border-t">
+                <h3 className="font-bold text-gray-500 mb-4 uppercase tracking-wide text-sm">Previous Reports</h3>
+                <div className="space-y-4">
+                  {reports.map((report) => (
+                    <div
+                      key={report.id}
+                      className="bg-white border rounded-xl p-4 shadow-sm"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-bold text-gray-900">{report.reporter_name}</p>
+                          <p className="text-sm text-gray-500">{new Date(report.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <button
+                          onClick={() => deleteReport(report.id)}
+                          className="text-red-500 p-2 hover:bg-red-50 rounded-lg"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {validateEvaluatorFeedbacks(report.evaluator_feedbacks).length} evaluators evaluated
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
     </div>
