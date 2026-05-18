@@ -36,11 +36,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate at least one feedback item
+    // Require at least one tag OR a non-empty comment.
+    // The fast-path mobile flow allows submitting a comment-only evaluation.
     const totalTags = (commend_tags?.length || 0) + (recommend_tags?.length || 0) + (challenge_tags?.length || 0);
-    if (totalTags === 0) {
+    const hasComment = typeof comments === 'string' && comments.trim().length > 0;
+    if (totalTags === 0 && !hasComment) {
       return NextResponse.json(
-        { error: 'Please select at least one feedback item' },
+        { error: 'Please select at least one feedback item or write a comment' },
         { status: 400 }
       );
     }

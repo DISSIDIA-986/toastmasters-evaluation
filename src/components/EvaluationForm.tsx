@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import QuickCriteria from './QuickCriteria';
 import { SPEECH_TYPES, EvaluationFormData } from '@/lib/types';
 
@@ -8,6 +8,8 @@ interface EvaluationFormProps {
   meetingId: number;
   onSuccess?: () => void;
 }
+
+const EVALUATOR_NAME_KEY = 'tm-evaluator-name';
 
 const initialFormData: EvaluationFormData = {
   evaluator_name: '',
@@ -22,16 +24,28 @@ const initialFormData: EvaluationFormData = {
 export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormProps) {
   const [formData, setFormData] = useState<EvaluationFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitState, setSubmitState] = useState<'idle' | 'submitted'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const speakerInputRef = useRef<HTMLInputElement>(null);
+
+  // Hydrate evaluator name from localStorage on mount.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(EVALUATOR_NAME_KEY);
+      if (saved) {
+        setFormData((prev) => ({ ...prev, evaluator_name: saved }));
+      }
+    } catch {
+      // localStorage unavailable (private mode, etc) — silently ignore.
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setSubmitStatus('idle');
     setErrorMessage('');
 
-    // Validate
+    // Validate names.
     if (!formData.evaluator_name.trim()) {
       setErrorMessage('Please enter your name');
       setIsSubmitting(false);
@@ -43,10 +57,12 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
       return;
     }
 
-    // Check at least one feedback item selected
-    const totalTags = formData.commend_tags.length + formData.recommend_tags.length + formData.challenge_tags.length;
-    if (totalTags === 0) {
-      setErrorMessage('Please select at least one feedback item');
+    // Require at least one tag OR a non-empty comment.
+    const totalTags =
+      formData.commend_tags.length + formData.recommend_tags.length + formData.challenge_tags.length;
+    const hasComment = formData.comments.trim().length > 0;
+    if (totalTags === 0 && !hasComment) {
+      setErrorMessage('Please select at least one feedback item or write a comment');
       setIsSubmitting(false);
       return;
     }
@@ -66,49 +82,63 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
         throw new Error(data.error || 'Failed to submit');
       }
 
-      setSubmitStatus('success');
-      setFormData(initialFormData);
+      // Persist evaluator name for next submission.
+      try {
+        localStorage.setItem(EVALUATOR_NAME_KEY, formData.evaluator_name.trim());
+      } catch {
+        // localStorage unavailable — proceed without persisting.
+      }
+
+      // Soft reset: clear per-speaker fields, keep evaluator name.
+      // Show "Submitted ✓" on the submit button for 1.2s, then return to idle
+      // so the same evaluator can immediately submit for the next speaker.
+      const keepEvaluator = formData.evaluator_name.trim();
+      setFormData({ ...initialFormData, evaluator_name: keepEvaluator });
+      setSubmitState('submitted');
       onSuccess?.();
+
+      window.setTimeout(() => {
+        setSubmitState('idle');
+        // Auto-focus speaker input for the next entry on touch devices
+        // where users may want to dictate the next name immediately.
+        speakerInputRef.current?.focus({ preventScroll: true });
+      }, 1200);
     } catch (error) {
-      setSubmitStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Submission failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (submitStatus === 'success') {
-    return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center my-8">
-        <div className="text-6xl mb-6">✅</div>
-        <h3 className="text-3xl font-bold text-green-800 mb-4">Thank You!</h3>
-        <p className="text-green-700 text-lg mb-8">Your evaluation has been submitted successfully.</p>
-        <button
-          onClick={() => setSubmitStatus('idle')}
-          className="w-full bg-green-600 text-white text-xl font-semibold px-8 py-4 rounded-xl hover:bg-green-700 transition shadow-lg"
-        >
-          Submit Another Evaluation
-        </button>
-      </div>
-    );
-  }
+  const submitLabel = (() => {
+    if (isSubmitting) return 'Submitting…';
+    if (submitState === 'submitted') return 'Submitted ✓';
+    return 'Submit Evaluation';
+  })();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 pb-12">
       {/* Names Section */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-3">
-          <span className="text-2xl">👤</span> 
+          <span className="text-2xl">👤</span>
           <span className="text-xl">Basic Info</span>
         </h3>
 
         <div className="space-y-6">
           <div>
-            <label className="block text-lg font-medium text-gray-700 mb-2">
+            <label htmlFor="evaluator-name" className="block text-lg font-medium text-gray-700 mb-2">
               Your Name (Evaluator)
             </label>
             <input
+              id="evaluator-name"
+              name="evaluator-name"
               type="text"
+              autoComplete="name"
+              autoCapitalize="words"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="next"
               value={formData.evaluator_name}
               onChange={(e) => setFormData((prev) => ({ ...prev, evaluator_name: e.target.value }))}
               placeholder="Enter your name"
@@ -117,11 +147,19 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
           </div>
 
           <div>
-            <label className="block text-lg font-medium text-gray-700 mb-2">
+            <label htmlFor="speaker-name" className="block text-lg font-medium text-gray-700 mb-2">
               Speaker Name
             </label>
             <input
+              ref={speakerInputRef}
+              id="speaker-name"
+              name="speaker-name"
               type="text"
+              autoComplete="off"
+              autoCapitalize="words"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="next"
               value={formData.speaker_name}
               onChange={(e) => setFormData((prev) => ({ ...prev, speaker_name: e.target.value }))}
               placeholder="Enter speaker's name"
@@ -166,14 +204,14 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
       {/* Comments Section */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-3">
-          <span className="text-2xl">💬</span> 
-          <span className="text-xl">Additional Comments</span>
+          <span className="text-2xl">💬</span>
+          <span className="text-xl">Comments</span>
         </h3>
         <textarea
           value={formData.comments}
           onChange={(e) => setFormData((prev) => ({ ...prev, comments: e.target.value }))}
-          placeholder="Any additional feedback for the speaker..."
-          rows={5}
+          placeholder="One sentence is plenty. Tap the 🎙 on your keyboard to dictate."
+          rows={6}
           className="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors resize-y"
         />
       </div>
@@ -185,18 +223,23 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
         </div>
       )}
 
-      {/* Submit Button */}
-      <div className="sticky bottom-4 z-10 pt-4 pb-2">
+      {/* Submit Button — natural flow at end of form; doubles as success indicator.
+          Sticky/fixed positioning is intentionally avoided: on iOS Safari the
+          virtual keyboard does not consistently push fixed elements above it,
+          and on long forms the sticky bar overlaps the criteria cards. */}
+      <div className="pt-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || submitState === 'submitted'}
           className={`w-full py-5 rounded-2xl font-bold text-xl transition-all shadow-xl ${
-            isSubmitting
+            submitState === 'submitted'
+              ? 'bg-green-600 text-white shadow-green-200'
+              : isSubmitting
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-blue-200'
           }`}
         >
-          {isSubmitting ? 'Submitting...' : 'Submit Evaluation'}
+          {submitLabel}
         </button>
       </div>
     </form>
