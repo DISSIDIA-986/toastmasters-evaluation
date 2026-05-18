@@ -96,7 +96,7 @@ export default function QuickCriteria({
                             type="button"
                             onClick={() => handleToggle(item, 'commend')}
                             aria-pressed={status === 'commend'}
-                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
+                            className={`py-3 px-2 rounded-lg text-xs font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
                               status === 'commend'
                                 ? 'bg-green-100 border-green-500 text-green-800 shadow-inner'
                                 : 'bg-white border-gray-200 text-gray-600 hover:border-green-300'
@@ -110,7 +110,7 @@ export default function QuickCriteria({
                             type="button"
                             onClick={() => handleToggle(item, 'recommend')}
                             aria-pressed={status === 'recommend'}
-                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
+                            className={`py-3 px-2 rounded-lg text-xs font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
                               status === 'recommend'
                                 ? 'bg-yellow-100 border-yellow-500 text-yellow-800 shadow-inner'
                                 : 'bg-white border-gray-200 text-gray-600 hover:border-yellow-300'
@@ -124,7 +124,7 @@ export default function QuickCriteria({
                             type="button"
                             onClick={() => handleToggle(item, 'challenge')}
                             aria-pressed={status === 'challenge'}
-                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
+                            className={`py-3 px-2 rounded-lg text-xs font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
                               status === 'challenge'
                                 ? 'bg-blue-100 border-blue-500 text-blue-800 shadow-inner'
                                 : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'
