@@ -110,6 +110,7 @@ export default function QuickCriteria({
                             type="button"
                             onClick={() => handleToggle(item, 'recommend')}
                             aria-pressed={status === 'recommend'}
+                            aria-label="Recommend"
                             className={`py-3 px-2 rounded-lg text-xs font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
                               status === 'recommend'
                                 ? 'bg-yellow-100 border-yellow-500 text-yellow-800 shadow-inner'
@@ -117,13 +118,14 @@ export default function QuickCriteria({
                             }`}
                           >
                             <span aria-hidden="true">{status === 'recommend' ? '✓' : '💡'}</span>
-                            <span>Recommend</span>
+                            <span aria-hidden="true">Recomm.</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => handleToggle(item, 'challenge')}
                             aria-pressed={status === 'challenge'}
+                            aria-label="Challenge"
                             className={`py-3 px-2 rounded-lg text-xs font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
                               status === 'challenge'
                                 ? 'bg-blue-100 border-blue-500 text-blue-800 shadow-inner'
@@ -131,7 +133,7 @@ export default function QuickCriteria({
                             }`}
                           >
                             <span aria-hidden="true">{status === 'challenge' ? '✓' : '🎯'}</span>
-                            <span>Challenge</span>
+                            <span aria-hidden="true">Chall.</span>
                           </button>
                         </div>
                       </div>
