@@ -95,37 +95,43 @@ export default function QuickCriteria({
                           <button
                             type="button"
                             onClick={() => handleToggle(item, 'commend')}
-                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 ${
+                            aria-pressed={status === 'commend'}
+                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
                               status === 'commend'
                                 ? 'bg-green-100 border-green-500 text-green-800 shadow-inner'
                                 : 'bg-white border-gray-200 text-gray-600 hover:border-green-300'
                             }`}
                           >
-                            {status === 'commend' ? '✓ Commend' : 'Commend'}
+                            <span aria-hidden="true">{status === 'commend' ? '✓' : '👏'}</span>
+                            <span>Commend</span>
                           </button>
-                          
+
                           <button
                             type="button"
                             onClick={() => handleToggle(item, 'recommend')}
-                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 ${
+                            aria-pressed={status === 'recommend'}
+                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
                               status === 'recommend'
                                 ? 'bg-yellow-100 border-yellow-500 text-yellow-800 shadow-inner'
                                 : 'bg-white border-gray-200 text-gray-600 hover:border-yellow-300'
                             }`}
                           >
-                            {status === 'recommend' ? '✓ Rec...' : 'Recommend'}
+                            <span aria-hidden="true">{status === 'recommend' ? '✓' : '💡'}</span>
+                            <span>Recommend</span>
                           </button>
-                          
+
                           <button
                             type="button"
                             onClick={() => handleToggle(item, 'challenge')}
-                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 ${
+                            aria-pressed={status === 'challenge'}
+                            className={`py-3 px-2 rounded-lg text-sm font-bold transition-all border-2 flex items-center justify-center gap-1.5 ${
                               status === 'challenge'
                                 ? 'bg-blue-100 border-blue-500 text-blue-800 shadow-inner'
                                 : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'
                             }`}
                           >
-                            {status === 'challenge' ? '✓ Chall...' : 'Challenge'}
+                            <span aria-hidden="true">{status === 'challenge' ? '✓' : '🎯'}</span>
+                            <span>Challenge</span>
                           </button>
                         </div>
                       </div>
