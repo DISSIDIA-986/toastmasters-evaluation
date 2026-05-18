@@ -6,6 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Meeting, Evaluation, SPEECH_TYPES } from '@/lib/types';
 import StatisticianReport from '@/components/StatisticianReport';
 import GeneralEvaluatorReport from '@/components/GeneralEvaluatorReport';
+import { formatMeetingDateLong, formatMeetingDateShort } from '@/lib/date';
 
 // P0 Security: Sanitize CSV values to prevent formula injection
 // Characters =, +, -, @, tab, carriage return can trigger formula execution in Excel
@@ -180,12 +181,7 @@ export default function AdminPage() {
   const sendViaEmail = () => {
     if (evaluations.length === 0 || !selectedMeeting) return;
 
-    const meetingDate = new Date(selectedMeeting.date).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    const meetingDate = formatMeetingDateLong(selectedMeeting.date);
 
     const grouped = groupEvaluationsBySpeaker();
     const divider = '─'.repeat(40);
@@ -311,7 +307,7 @@ export default function AdminPage() {
                     >
                       <div className="font-medium text-gray-800">{meeting.name}</div>
                       <div className="text-sm text-gray-500">
-                        {new Date(meeting.date).toLocaleDateString()}
+                        {formatMeetingDateShort(meeting.date)}
                       </div>
                     </button>
                   ))}
@@ -330,12 +326,7 @@ export default function AdminPage() {
                     <div>
                       <h2 className="font-semibold text-gray-800 text-lg">{selectedMeeting.name}</h2>
                       <p className="text-gray-500 text-sm">
-                        {new Date(selectedMeeting.date).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                        {formatMeetingDateLong(selectedMeeting.date)}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">

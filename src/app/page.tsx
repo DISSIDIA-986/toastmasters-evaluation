@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatMeetingDateShort } from '@/lib/date';
 
 const HOME_URL = 'https://toastmasters-evaluation.vercel.app';
 
@@ -125,7 +126,7 @@ export default function Home() {
                     className="w-full text-left p-4 rounded-xl border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 transition group"
                   >
                     <div className="font-semibold text-gray-800 group-hover:text-blue-700">{meeting.name}</div>
-                    <div className="text-sm text-gray-500">{new Date(meeting.date).toLocaleDateString()}</div>
+                    <div className="text-sm text-gray-500">{formatMeetingDateShort(meeting.date)}</div>
                   </button>
                 ))}
               </div>
