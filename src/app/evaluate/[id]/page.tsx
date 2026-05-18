@@ -1,53 +1,48 @@
-import { getMeetingById } from '@/lib/db';
+import { getMeetingById, getMeetingByDate } from '@/lib/db';
 import EvaluationForm from '@/components/EvaluationForm';
+import { formatMeetingDateLong, parseYyMMdd } from '@/lib/date';
 import { notFound } from 'next/navigation';
+
+const NUMERIC_ID = /^\d+$/;
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * Accepts two URL shapes in the same dynamic segment:
+ *   /evaluate/9       → numeric meeting id (existing behaviour)
+ *   /evaluate/260519  → yyMMdd date (resolves to the meeting on 2026-05-19)
+ *
+ * The yyMMdd form lets the agenda maintainer (Nelson) compose a link from
+ * the meeting date without looking up the id in admin.
+ */
 export default async function EvaluatePage({ params }: Props) {
   const { id } = await params;
-  const meetingId = parseInt(id);
 
-  if (isNaN(meetingId)) {
-    notFound();
-  }
-
+  // Resolve the meeting. Try yyMMdd first when the segment looks like a date,
+  // then fall back to a strictly-numeric id. Garbage segments (e.g. "9foo")
+  // are rejected up front so they don't silently resolve to meeting 9.
   let meeting;
   try {
-    meeting = await getMeetingById(meetingId);
+    const isoFromDate = parseYyMMdd(id);
+    if (isoFromDate) {
+      meeting = await getMeetingByDate(isoFromDate);
+    } else if (NUMERIC_ID.test(id)) {
+      meeting = await getMeetingById(parseInt(id, 10));
+    }
   } catch {
-    // Database not initialized yet
+    // Database not initialized yet — fall through to the not-found state below.
     meeting = null;
   }
 
+  // Render a real 404 (not a 200 with a "not found" body) so a bad link
+  // pasted into the agenda surfaces clearly in monitoring and crawlers.
   if (!meeting) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl p-8 max-w-md text-center shadow-lg">
-          <div className="text-5xl mb-4">📋</div>
-          <h1 className="text-xl font-semibold text-gray-800 mb-2">Meeting Not Found</h1>
-          <p className="text-gray-600 mb-4">
-            This meeting doesn&apos;t exist or hasn&apos;t been created yet.
-          </p>
-          <a
-            href="/admin"
-            className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-          >
-            Go to Admin
-          </a>
-        </div>
-      </div>
-    );
+    notFound();
   }
 
-  const formattedDate = new Date(meeting.date).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const formattedDate = formatMeetingDateLong(meeting.date);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -62,7 +57,7 @@ export default async function EvaluatePage({ params }: Props) {
 
       {/* Form */}
       <main className="max-w-lg mx-auto p-4 -mt-4">
-        <EvaluationForm meetingId={meetingId} />
+        <EvaluationForm meetingId={meeting.id} />
       </main>
 
       {/* Footer */}

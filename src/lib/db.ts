@@ -104,6 +104,22 @@ export async function getMeetingById(id: number) {
   return result.rows[0];
 }
 
+/**
+ * Look up a meeting by its calendar date (YYYY-MM-DD).
+ * Used by the date-based route so URL maintainers can construct links from
+ * a date (e.g. yyMMdd 260519) without needing the numeric id.
+ *
+ * Deterministic on collision: if two meetings share a date (unusual but
+ * possible), the oldest record (smallest id) wins so a given URL always
+ * resolves to the same meeting.
+ */
+export async function getMeetingByDate(dateIso: string) {
+  const result = await sql`
+    SELECT * FROM meetings WHERE date = ${dateIso} ORDER BY id ASC LIMIT 1
+  `;
+  return result.rows[0];
+}
+
 // Evaluation operations
 export async function createEvaluation(data: {
   meeting_id: number;
