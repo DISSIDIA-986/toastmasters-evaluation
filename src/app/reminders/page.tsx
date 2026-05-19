@@ -4,8 +4,7 @@ import { useMemo, useState } from 'react';
 
 // Anchor "today" in Calgary's timezone so the default doesn't drift by a day
 // when the page is rendered from a UTC headless browser or a non-Mountain
-// locale. We also fall back to today if today is already Tuesday, so the
-// organizer can fire the page up Tuesday morning and not have to re-pick.
+// locale. Falls back to today if today is already Tuesday.
 function nextTuesdayIso(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Edmonton',
@@ -29,9 +28,8 @@ function nextTuesdayIso(): string {
   return utc.toISOString().split('T')[0];
 }
 
-// Render YYYY-MM-DD as "Tuesday, May 19" — parse as UTC to dodge the
-// off-by-one display bug we hit elsewhere in the app when meetings rendered
-// as the previous day in Mountain Time.
+// Render YYYY-MM-DD as "Tuesday, May 19" — UTC parse to dodge the
+// off-by-one display bug we hit elsewhere in the app.
 function formatDate(iso: string): string {
   if (!iso) return '';
   const parts = iso.split('-').map(Number);
@@ -46,78 +44,120 @@ function formatDate(iso: string): string {
   });
 }
 
+// Permissive RFC-5321ish check — good enough to catch typos like missing @,
+// not a security boundary. Mail clients handle the rest.
+function isEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 interface SpeakerRow {
   id: string;
-  speaker: string;
-  evaluator: string;
-  sent: boolean;
+  speakerName: string;
+  speakerEmail: string;
+  evaluatorName: string;
+  evaluatorEmail: string;
 }
 
 function newRow(): SpeakerRow {
   return {
     id: Math.random().toString(36).slice(2, 10),
-    speaker: '',
-    evaluator: '',
-    sent: false,
+    speakerName: '',
+    speakerEmail: '',
+    evaluatorName: '',
+    evaluatorEmail: '',
   };
 }
 
 const SUBJECT = "Reminders for Tuesday's meeting — agenda details + Basecamp feedback request";
 
-function buildBody(
-  speaker: string,
-  evaluator: string,
-  dateIso: string,
-): string {
+function buildBody(rows: SpeakerRow[], dateIso: string): string {
   const dateLabel = formatDate(dateIso);
-  return `Hi ${speaker},
+  const pairs = rows
+    .filter((r) => r.speakerName.trim() && r.evaluatorName.trim())
+    .map((r) => `  • ${r.speakerName.trim()}  ←→  ${r.evaluatorName.trim()}`)
+    .join('\n');
 
-Two quick things before our meeting on ${dateLabel}:
+  return `Hi speakers and evaluators,
+
+Two quick reminders for our meeting on ${dateLabel}:
+
+FOR SPEAKERS — please do both before Monday night:
 
 1. Fill your speech details on the SpokenWord agenda form so the printed agenda is accurate and the Toastmaster can introduce you properly:
    https://spokenwordcalgary.toastmastersclubs.org/agenda.html
    Save: Pathway · Project & Time · Project Title · Speech Introduction.
 
-2. Send a Basecamp feedback request to your evaluator, ${evaluator}, before the meeting. This lets ${evaluator} focus on what you actually want feedback on, and it's the step we most often forget:
+2. Send a Basecamp feedback request to your assigned evaluator (see the pairing list below). This lets your evaluator focus on what you actually want feedback on, and it's the step we most often forget:
    https://app.basecamp.toastmasters.org/dashboard/feedback
    • Click "Request Feedback"
    • Club: Spoken Word Toastmasters Club
-   • Member(s): ${evaluator}
+   • Member(s): your evaluator
    • Request: one line, e.g. "Please give feedback on my audience awareness in my upcoming speech."
    • Visibility: Selected member(s) only → Send
 
-If you can't make it on ${dateLabel}, please let us know ASAP so we can arrange a swap.
+FOR EVALUATORS — please watch for that Basecamp feedback request from your speaker. If you don't get one by Monday evening, a friendly nudge is welcome.
+
+Pairings for this meeting:
+${pairs || '  • (add speaker / evaluator pairs in the table to populate this list)'}
+
+If anyone can't make it on ${dateLabel}, please let us know ASAP so we can arrange a swap.
 
 See you Tuesday at 6:15 PM!
 Spoken Word Club`;
 }
 
-interface SpeakerCardProps {
-  row: SpeakerRow;
-  index: number;
-  dateIso: string;
-  canRemove: boolean;
-  onChange: (patch: Partial<SpeakerRow>) => void;
-  onRemove: () => void;
-}
+// Accent palette so each pair row carries a stable colour into the pairing
+// list — helps the operator visually confirm row order matches the body.
+const ACCENTS = [
+  'bg-blue-500',
+  'bg-amber-500',
+  'bg-purple-500',
+  'bg-emerald-500',
+  'bg-rose-500',
+];
 
-function SpeakerCard({
-  row,
-  index,
-  dateIso,
-  canRemove,
-  onChange,
-  onRemove,
-}: SpeakerCardProps) {
-  const [copied, setCopied] = useState<'subject' | 'body' | null>(null);
-  const filled = row.speaker.trim() && row.evaluator.trim() && dateIso;
-  const body = useMemo(
-    () => buildBody(row.speaker.trim() || '[speaker]', row.evaluator.trim() || '[evaluator]', dateIso),
-    [row.speaker, row.evaluator, dateIso],
-  );
+export default function RemindersPage() {
+  const [dateIso, setDateIso] = useState<string>(() => nextTuesdayIso());
+  const [rows, setRows] = useState<SpeakerRow[]>(() => [newRow(), newRow()]);
+  const [copied, setCopied] = useState<'to' | 'cc' | 'body' | null>(null);
 
-  const copy = async (kind: 'subject' | 'body', text: string) => {
-    if (!filled) return;
+  const updateRow = (id: string, patch: Partial<SpeakerRow>) =>
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  const removeRow = (id: string) =>
+    setRows((prev) => (prev.length > 1 ? prev.filter((r) => r.id !== id) : prev));
+  const addRow = () => setRows((prev) => [...prev, newRow()]);
+
+  const speakerEmails = rows
+    .map((r) => r.speakerEmail.trim())
+    .filter((e) => isEmail(e));
+  const evaluatorEmails = rows
+    .map((r) => r.evaluatorEmail.trim())
+    .filter((e) => isEmail(e));
+  const toLine = speakerEmails.join(', ');
+  const ccLine = evaluatorEmails.join(', ');
+
+  const body = useMemo(() => buildBody(rows, dateIso), [rows, dateIso]);
+
+  // Soft validation: any row with a name but no email, or vice versa, is a
+  // likely-incomplete entry. We don't block — operator can still copy the
+  // body — but we surface a warning so missing emails aren't silent.
+  const incompleteRows = rows
+    .map((r, i) => ({ row: r, index: i }))
+    .filter(({ row }) => {
+      const hasSpeakerName = !!row.speakerName.trim();
+      const hasSpeakerEmail = isEmail(row.speakerEmail);
+      const hasEvaluatorName = !!row.evaluatorName.trim();
+      const hasEvaluatorEmail = isEmail(row.evaluatorEmail);
+      const anyFilled =
+        hasSpeakerName || hasSpeakerEmail || hasEvaluatorName || hasEvaluatorEmail;
+      const allFilled =
+        hasSpeakerName && hasSpeakerEmail && hasEvaluatorName && hasEvaluatorEmail;
+      return anyFilled && !allFilled;
+    });
+
+  const canSend = speakerEmails.length > 0 && evaluatorEmails.length > 0 && dateIso;
+
+  const copy = async (kind: 'to' | 'cc' | 'body', text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(kind);
@@ -128,127 +168,15 @@ function SpeakerCard({
   };
 
   const openMail = () => {
-    if (!filled) return;
-    const mailto = `mailto:?subject=${encodeURIComponent(SUBJECT)}&body=${encodeURIComponent(body)}`;
+    if (!canSend) return;
+    const params = new URLSearchParams();
+    params.set('subject', SUBJECT);
+    if (ccLine) params.set('cc', ccLine);
+    params.set('body', body);
+    // Encode "to" as the pre-? portion so it works across more mail clients.
+    const mailto = `mailto:${encodeURIComponent(toLine)}?${params.toString()}`;
     window.location.href = mailto;
   };
-
-  return (
-    <section className={`bg-white rounded-2xl shadow-sm border-2 p-6 mb-6 transition-colors ${row.sent ? 'border-green-200 bg-green-50/30' : 'border-gray-100'}`}>
-      <header className="flex justify-between items-start mb-4 gap-3">
-        <h2 className="text-lg font-bold text-gray-900">
-          Speaker #{index + 1}{row.speaker.trim() ? ` — ${row.speaker.trim()}` : ''}
-        </h2>
-        <div className="flex items-center gap-3 shrink-0">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer">
-            <input
-              type="checkbox"
-              checked={row.sent}
-              onChange={(e) => onChange({ sent: e.target.checked })}
-              className="w-4 h-4 accent-green-600"
-            />
-            Sent
-          </label>
-          {canRemove && (
-            <button
-              type="button"
-              onClick={onRemove}
-              className="text-gray-400 hover:text-red-600 transition px-2 py-1 rounded"
-              aria-label="Remove speaker"
-              title="Remove this speaker"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </header>
-
-      <div className="grid sm:grid-cols-2 gap-3 mb-4">
-        <label className="block">
-          <span className="block text-xs font-medium text-gray-600 mb-1">Speaker name</span>
-          <input
-            type="text"
-            value={row.speaker}
-            onChange={(e) => onChange({ speaker: e.target.value })}
-            placeholder="e.g. Riho Kobayashi"
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors"
-          />
-        </label>
-        <label className="block">
-          <span className="block text-xs font-medium text-gray-600 mb-1">Evaluator name</span>
-          <input
-            type="text"
-            value={row.evaluator}
-            onChange={(e) => onChange({ evaluator: e.target.value })}
-            placeholder="e.g. Nnamdi Onaga"
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors"
-          />
-        </label>
-      </div>
-
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3 text-sm">
-        <div className="font-semibold text-gray-700 mb-1">Subject</div>
-        <div className="text-gray-900 mb-3 whitespace-pre-wrap break-words">{SUBJECT}</div>
-        <div className="font-semibold text-gray-700 mb-1">Body</div>
-        <div className="text-gray-800 whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed">
-          {body}
-        </div>
-      </div>
-
-      {!filled && (
-        <p className="text-orange-600 text-sm mb-3">
-          Fill speaker, evaluator, and date to enable copy / mail buttons.
-        </p>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={!filled}
-          onClick={() => copy('subject', SUBJECT)}
-          className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
-        >
-          {copied === 'subject' ? 'Copied ✓' : 'Copy subject'}
-        </button>
-        <button
-          type="button"
-          disabled={!filled}
-          onClick={() => copy('body', body)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
-        >
-          {copied === 'body' ? 'Copied ✓' : 'Copy body'}
-        </button>
-        <button
-          type="button"
-          disabled={!filled}
-          onClick={openMail}
-          className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
-        >
-          Open in mail app
-        </button>
-      </div>
-    </section>
-  );
-}
-
-export default function RemindersPage() {
-  const [dateIso, setDateIso] = useState<string>(() => nextTuesdayIso());
-  const [rows, setRows] = useState<SpeakerRow[]>(() => [newRow(), newRow()]);
-
-  const updateRow = (id: string, patch: Partial<SpeakerRow>) => {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  };
-  const removeRow = (id: string) => {
-    setRows((prev) => (prev.length > 1 ? prev.filter((r) => r.id !== id) : prev));
-  };
-  const addRow = () => {
-    setRows((prev) => [...prev, newRow()]);
-  };
-  const resetSent = () => {
-    setRows((prev) => prev.map((r) => ({ ...r, sent: false })));
-  };
-
-  const sentCount = rows.filter((r) => r.sent).length;
 
   return (
     <main className="min-h-[calc(100vh-64px)] bg-gray-50">
@@ -257,63 +185,211 @@ export default function RemindersPage() {
           Pre-Meeting Reminders
         </h1>
         <p className="text-gray-600 mb-6">
-          One reminder per Prepared Speaker. Each email covers both tasks they
-          need to do before Tuesday: fill the SpokenWord agenda and send a
-          Basecamp feedback request to their evaluator. Nothing is sent from
-          this page — it just builds the message for you to copy into your
-          email client.
+          One batched reminder to all speakers and their evaluators for the
+          upcoming meeting. Speakers go to <strong>To:</strong>, evaluators go to
+          <strong> CC:</strong>. Add a row per Prepared Speech pair — the
+          pairing list is rendered into the email body so everyone can see who
+          they're paired with. Nothing is sent from this page.
         </p>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 flex flex-wrap items-end gap-4">
-          <label className="block">
-            <span className="block text-xs font-medium text-gray-600 mb-1">Meeting date</span>
-            <input
-              type="date"
-              value={dateIso}
-              onChange={(e) => setDateIso(e.target.value)}
-              className="px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors"
-            />
-          </label>
-          <div className="text-sm text-gray-500 grow">
-            Sent: <span className="font-semibold text-gray-800">{sentCount} / {rows.length}</span>
-          </div>
-          {sentCount > 0 && (
+        {/* Roster table — primary entry surface. + Add speaker sits in the
+            header next to the date so the control is visible alongside the
+            data. */}
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+          <header className="flex flex-wrap items-end gap-4 mb-4">
+            <label className="block">
+              <span className="block text-xs font-medium text-gray-600 mb-1">Meeting date</span>
+              <input
+                type="date"
+                value={dateIso}
+                onChange={(e) => setDateIso(e.target.value)}
+                className="px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors"
+              />
+            </label>
+            <div className="grow text-sm text-gray-500">
+              <span className="font-semibold text-gray-800">{rows.length}</span> speaker pair{rows.length === 1 ? '' : 's'}
+            </div>
             <button
               type="button"
-              onClick={resetSent}
-              className="text-sm text-gray-500 hover:text-gray-700 underline"
+              onClick={addRow}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition shadow-sm"
             >
-              Reset "Sent" marks
+              + Add speaker
             </button>
+          </header>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <th className="px-2 py-2 w-10">#</th>
+                  <th className="px-2 py-2">Speaker</th>
+                  <th className="px-2 py-2">Evaluator</th>
+                  <th className="px-2 py-2 w-10"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => {
+                  const accent = ACCENTS[i % ACCENTS.length];
+                  return (
+                    <tr key={row.id} className="border-t border-gray-100 align-top">
+                      <td className="px-2 py-3">
+                        <span className={`inline-flex w-7 h-7 rounded-full text-white text-xs font-bold items-center justify-center ${accent}`}>
+                          {i + 1}
+                        </span>
+                      </td>
+                      <td className="px-2 py-3 space-y-2">
+                        <input
+                          type="text"
+                          value={row.speakerName}
+                          onChange={(e) => updateRow(row.id, { speakerName: e.target.value })}
+                          placeholder="Speaker name"
+                          className="w-full px-3 py-2 border-2 border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-colors"
+                        />
+                        <input
+                          type="email"
+                          value={row.speakerEmail}
+                          onChange={(e) => updateRow(row.id, { speakerEmail: e.target.value })}
+                          placeholder="speaker@email.com"
+                          autoComplete="off"
+                          spellCheck={false}
+                          className="w-full px-3 py-2 border-2 border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-colors text-xs"
+                        />
+                      </td>
+                      <td className="px-2 py-3 space-y-2">
+                        <input
+                          type="text"
+                          value={row.evaluatorName}
+                          onChange={(e) => updateRow(row.id, { evaluatorName: e.target.value })}
+                          placeholder="Evaluator name"
+                          className="w-full px-3 py-2 border-2 border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-colors"
+                        />
+                        <input
+                          type="email"
+                          value={row.evaluatorEmail}
+                          onChange={(e) => updateRow(row.id, { evaluatorEmail: e.target.value })}
+                          placeholder="evaluator@email.com"
+                          autoComplete="off"
+                          spellCheck={false}
+                          className="w-full px-3 py-2 border-2 border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-colors text-xs"
+                        />
+                      </td>
+                      <td className="px-2 py-3 text-center">
+                        {rows.length > 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => removeRow(row.id)}
+                            className="text-gray-400 hover:text-red-600 transition"
+                            aria-label={`Remove row ${i + 1}`}
+                          >
+                            ✕
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {incompleteRows.length > 0 && (
+            <p className="mt-3 text-orange-600 text-sm">
+              Row{incompleteRows.length > 1 ? 's' : ''}{' '}
+              {incompleteRows.map((r) => `#${r.index + 1}`).join(', ')} {incompleteRows.length > 1 ? 'are' : 'is'} partially filled — names or emails missing.
+            </p>
           )}
         </section>
 
-        {rows.map((row, i) => (
-          <SpeakerCard
-            key={row.id}
-            row={row}
-            index={i}
-            dateIso={dateIso}
-            canRemove={rows.length > 1}
-            onChange={(patch) => updateRow(row.id, patch)}
-            onRemove={() => removeRow(row.id)}
-          />
-        ))}
+        {/* Single preview pane — recipients + subject + body. Recipients are
+            shown verbatim so the operator can confirm before opening their
+            mail client. */}
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Email preview</h2>
 
-        <button
-          type="button"
-          onClick={addRow}
-          className="w-full py-3 rounded-2xl border-2 border-dashed border-gray-300 text-gray-600 font-medium hover:border-blue-500 hover:text-blue-700 hover:bg-blue-50 transition"
-        >
-          + Add another speaker
-        </button>
+          <div className="space-y-3 mb-4 text-sm">
+            <RecipientRow label="To" value={toLine} placeholder="(no speaker emails yet)" />
+            <RecipientRow label="Cc" value={ccLine} placeholder="(no evaluator emails yet)" />
+            <div>
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Subject</div>
+              <div className="text-gray-900 break-words">{SUBJECT}</div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Body</div>
+            <div className="text-gray-800 whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed">
+              {body}
+            </div>
+          </div>
+
+          {!canSend && (
+            <p className="text-orange-600 text-sm mb-3">
+              Add at least one speaker email and one evaluator email to enable
+              the mail / copy buttons.
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={!toLine}
+              onClick={() => copy('to', toLine)}
+              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              {copied === 'to' ? 'Copied ✓' : 'Copy To list'}
+            </button>
+            <button
+              type="button"
+              disabled={!ccLine}
+              onClick={() => copy('cc', ccLine)}
+              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              {copied === 'cc' ? 'Copied ✓' : 'Copy Cc list'}
+            </button>
+            <button
+              type="button"
+              disabled={!canSend}
+              onClick={() => copy('body', body)}
+              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              {copied === 'body' ? 'Copied ✓' : 'Copy body'}
+            </button>
+            <button
+              type="button"
+              disabled={!canSend}
+              onClick={openMail}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              Open in mail app
+            </button>
+          </div>
+        </section>
 
         <footer className="text-xs text-gray-400 mt-6">
           Tip: the “Open in mail app” button uses <code>mailto:</code> and may
           be truncated by web-based mail clients. For long messages prefer
-          “Copy body” and paste into a fresh message.
+          “Copy body” and paste into a fresh message after pasting the To /
+          Cc lists.
         </footer>
       </div>
     </main>
+  );
+}
+
+interface RecipientRowProps {
+  label: string;
+  value: string;
+  placeholder: string;
+}
+
+function RecipientRow({ label, value, placeholder }: RecipientRowProps) {
+  return (
+    <div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{label}</div>
+      <div className={`break-words ${value ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+        {value || placeholder}
+      </div>
+    </div>
   );
 }
