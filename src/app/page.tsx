@@ -52,7 +52,7 @@ export default function Home() {
       const meetings: Meeting[] = await response.json();
       
       if (meetings.length === 0) {
-        setError('No meetings found for today. Please check with the organizer.');
+        setError('No meetings found nearby. Please check with the organizer.');
       } else if (meetings.length === 1) {
         router.push(`/evaluate/${meetings[0].id}`);
       } else {
@@ -117,7 +117,7 @@ export default function Home() {
         {showMeetingModal && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-fade-in-up">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Select Today's Meeting</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Pick a Meeting</h3>
               <div className="space-y-3">
                 {todaysMeetings.map(meeting => (
                   <button

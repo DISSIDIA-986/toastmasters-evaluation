@@ -5,14 +5,21 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // Fetch meetings from the last 3 days to handle timezone differences
-    // and cases where the meeting might have been created a day early.
-    // We order by date descending so the most relevant (latest) one comes first.
+    // Show a small window around "now": one week back (so evaluators of the
+    // most recent meeting can still submit late) plus the next handful of
+    // upcoming Tuesdays. Ascending order so the closest upcoming meeting is
+    // the first row — that's the one the homepage auto-redirects to when
+    // there's nothing newer.
+    //
+    // The earlier implementation used DESC + 3-day lower bound, which on a
+    // seeded calendar returned the latest meetings in the table (months
+    // out) instead of the meetings relevant to the user clicking today.
     const result = await sql`
-      SELECT id, name, date 
-      FROM meetings 
-      WHERE date >= (CURRENT_DATE - INTERVAL '3 days')
-      ORDER BY date DESC, created_at DESC
+      SELECT id, name, date
+      FROM meetings
+      WHERE date >= (CURRENT_DATE - INTERVAL '7 days')
+        AND date <= (CURRENT_DATE + INTERVAL '35 days')
+      ORDER BY date ASC, created_at ASC
       LIMIT 5
     `;
 
