@@ -5,12 +5,35 @@ import { useMemo, useState } from 'react';
 // Next Tuesday at 6:25 PM Mountain Time is when our meetings start.
 // Reminders are sent BEFORE the meeting, so default the date input to the
 // upcoming Tuesday (or today if today already is one).
+//
+// Anchor "today" in Calgary's timezone so the default doesn't drift by a day
+// when the page is rendered from a UTC headless browser or a non-Mountain
+// locale. The earlier implementation used `new Date().getDay()` which read
+// the host machine's local time and produced a Wednesday default on a UTC
+// host running shortly after 18:00 MDT.
 function nextTuesdayIso(): string {
-  const d = new Date();
-  const day = d.getDay(); // 0=Sun ... 2=Tue
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Edmonton',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+  }).formatToParts(new Date());
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+  const weekdayMap: Record<string, number> = {
+    Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+  };
+  const day = weekdayMap[get('weekday')] ?? 0;
   const daysUntilTue = (2 - day + 7) % 7;
-  d.setDate(d.getDate() + daysUntilTue);
-  return d.toISOString().split('T')[0];
+  // Carry the calculation in UTC so setUTCDate + toISOString stays stable
+  // regardless of the host's local offset.
+  const utc = new Date(Date.UTC(
+    Number(get('year')),
+    Number(get('month')) - 1,
+    Number(get('day')),
+  ));
+  utc.setUTCDate(utc.getUTCDate() + daysUntilTue);
+  return utc.toISOString().split('T')[0];
 }
 
 // Render YYYY-MM-DD as "Tuesday, May 19" — parse as UTC to dodge the off-by-
