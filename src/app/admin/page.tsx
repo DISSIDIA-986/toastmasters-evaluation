@@ -6,6 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Meeting, Evaluation, SPEECH_TYPES } from '@/lib/types';
 import StatisticianReport from '@/components/StatisticianReport';
 import GeneralEvaluatorReport from '@/components/GeneralEvaluatorReport';
+import MembersManager from '@/components/MembersManager';
 import { formatMeetingDateLong, formatMeetingDateShort } from '@/lib/date';
 
 // P0 Security: Sanitize CSV values to prevent formula injection
@@ -41,6 +42,15 @@ export default function AdminPage() {
   const [showQRCode, setShowQRCode] = useState(false);
   const [showStatisticianReport, setShowStatisticianReport] = useState(false);
   const [showGeneralEvaluatorReport, setShowGeneralEvaluatorReport] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+    } finally {
+      window.location.href = '/login';
+    }
+  };
 
   // Schema is created at deploy via `npm run db:init` (scripts/init-db.ts),
   // not from the client on load (a public DDL endpoint was a deploy hazard).
@@ -256,14 +266,28 @@ export default function AdminPage() {
               Admin
             </Link>
             <button
+              onClick={() => setShowMembers(true)}
+              className="text-gray-700 font-medium px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+            >
+              Roster
+            </button>
+            <button
               onClick={() => setShowCreateForm(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
             >
               + New Meeting
             </button>
+            <button
+              onClick={handleSignOut}
+              className="text-gray-500 text-sm hover:text-gray-800 transition"
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </nav>
+
+      <MembersManager open={showMembers} onClose={() => setShowMembers(false)} />
 
       <main className="max-w-6xl mx-auto p-4">
         <div className="grid md:grid-cols-3 gap-6">

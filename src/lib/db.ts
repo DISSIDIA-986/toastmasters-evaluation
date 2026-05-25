@@ -12,6 +12,20 @@ export async function initializeDatabase() {
     )
   `;
 
+  // Club roster. display_name (not first_name) is the canonical label — the
+  // real data is "Daniel B." / "Daniel I.", already display names. email is
+  // unique so the seed is idempotent. active=false retires a member without
+  // deleting history.
+  await sql`
+    CREATE TABLE IF NOT EXISTS members (
+      id SERIAL PRIMARY KEY,
+      display_name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
   await sql`
     CREATE TABLE IF NOT EXISTS evaluations (
       id SERIAL PRIMARY KEY,
@@ -118,6 +132,56 @@ export async function getMeetingByDate(dateIso: string) {
     SELECT * FROM meetings WHERE date = ${dateIso} ORDER BY id ASC LIMIT 1
   `;
   return result.rows[0];
+}
+
+// ============ Member (roster) operations ============
+
+export async function getMembers() {
+  const result = await sql`
+    SELECT id, display_name, email, active, created_at
+    FROM members ORDER BY display_name ASC
+  `;
+  return result.rows;
+}
+
+export async function getActiveMembers() {
+  const result = await sql`
+    SELECT id, display_name, email, active, created_at
+    FROM members WHERE active = TRUE ORDER BY display_name ASC
+  `;
+  return result.rows;
+}
+
+/**
+ * Insert a member. Idempotent on email: re-seeding updates the display name
+ * and reactivates rather than erroring on the UNIQUE(email) constraint.
+ */
+export async function upsertMember(displayName: string, email: string) {
+  const result = await sql`
+    INSERT INTO members (display_name, email)
+    VALUES (${displayName}, ${email})
+    ON CONFLICT (email) DO UPDATE
+      SET display_name = EXCLUDED.display_name, active = TRUE
+    RETURNING id, display_name, email, active, created_at
+  `;
+  return result.rows[0];
+}
+
+export async function updateMember(
+  id: number,
+  data: { display_name: string; email: string; active: boolean },
+) {
+  const result = await sql`
+    UPDATE members
+    SET display_name = ${data.display_name}, email = ${data.email}, active = ${data.active}
+    WHERE id = ${id}
+    RETURNING id, display_name, email, active, created_at
+  `;
+  return result.rows[0];
+}
+
+export async function deleteMember(id: number) {
+  await sql`DELETE FROM members WHERE id = ${id}`;
 }
 
 // Evaluation operations
