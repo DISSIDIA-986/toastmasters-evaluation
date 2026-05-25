@@ -181,6 +181,13 @@ export async function upsertMember(displayName: string, email: string) {
   return result.rows[0];
 }
 
+export async function getMemberById(id: number) {
+  const result = await sql`
+    SELECT id, display_name, email, active, created_at FROM members WHERE id = ${id}
+  `;
+  return result.rows[0];
+}
+
 export async function updateMember(
   id: number,
   data: { display_name: string; email: string; active: boolean },

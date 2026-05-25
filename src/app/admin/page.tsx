@@ -7,6 +7,7 @@ import { Meeting, Evaluation, SPEECH_TYPES } from '@/lib/types';
 import StatisticianReport from '@/components/StatisticianReport';
 import GeneralEvaluatorReport from '@/components/GeneralEvaluatorReport';
 import MembersManager from '@/components/MembersManager';
+import SpeakerDigestSender from '@/components/SpeakerDigestSender';
 import { formatMeetingDateLong, formatMeetingDateShort } from '@/lib/date';
 
 // P0 Security: Sanitize CSV values to prevent formula injection
@@ -43,6 +44,7 @@ export default function AdminPage() {
   const [showStatisticianReport, setShowStatisticianReport] = useState(false);
   const [showGeneralEvaluatorReport, setShowGeneralEvaluatorReport] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showDigestSender, setShowDigestSender] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -368,9 +370,16 @@ export default function AdminPage() {
                       <button
                         onClick={sendViaEmail}
                         disabled={evaluations.length === 0}
+                        className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-200 transition disabled:opacity-50"
+                      >
+                        Mail (manual)
+                      </button>
+                      <button
+                        onClick={() => setShowDigestSender(true)}
+                        disabled={evaluations.length === 0}
                         className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition disabled:opacity-50"
                       >
-                        Send to Mail
+                        Send feedback
                       </button>
                     </div>
                   </div>
@@ -603,6 +612,16 @@ export default function AdminPage() {
           meetingId={selectedMeeting.id}
           meetingName={selectedMeeting.name}
           onClose={() => setShowGeneralEvaluatorReport(false)}
+        />
+      )}
+
+      {/* Send Speaker Feedback (P4) */}
+      {showDigestSender && selectedMeeting && (
+        <SpeakerDigestSender
+          meeting={selectedMeeting}
+          evaluations={evaluations}
+          open={showDigestSender}
+          onClose={() => setShowDigestSender(false)}
         />
       )}
     </div>
