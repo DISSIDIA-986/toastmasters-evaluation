@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { Member } from '@/lib/types';
 
 // Anchor "today" in Calgary's timezone so the default doesn't drift by a day
 // when the page is rendered from a UTC headless browser or a non-Mountain
@@ -121,6 +122,18 @@ export default function RemindersPage() {
   const [rows, setRows] = useState<SpeakerRow[]>(() => [newRow(), newRow()]);
   const [copied, setCopied] = useState<'to' | 'cc' | 'body' | null>(null);
 
+  // Active roster, used to populate the per-row member pickers. This page is
+  // behind auth (middleware), so /api/members is reachable with the session.
+  const [members, setMembers] = useState<Member[]>([]);
+  useEffect(() => {
+    fetch('/api/members')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: Member[]) =>
+        setMembers(Array.isArray(data) ? data.filter((m) => m.active) : []),
+      )
+      .catch(() => setMembers([]));
+  }, []);
+
   const updateRow = (id: string, patch: Partial<SpeakerRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   const removeRow = (id: string) =>
@@ -189,7 +202,7 @@ export default function RemindersPage() {
           upcoming meeting. Speakers go to <strong>To:</strong>, evaluators go to
           <strong> CC:</strong>. Add a row per Prepared Speech pair — the
           pairing list is rendered into the email body so everyone can see who
-          they're paired with. Nothing is sent from this page.
+          they&apos;re paired with. Nothing is sent from this page.
         </p>
 
         {/* Roster table — primary entry surface. + Add speaker sits in the
@@ -218,6 +231,13 @@ export default function RemindersPage() {
             </button>
           </header>
 
+          {members.length === 0 && (
+            <p className="text-xs text-amber-600 mb-3">
+              No roster loaded — add members in Admin → Roster to enable quick-pick.
+              You can still type names manually.
+            </p>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -239,6 +259,10 @@ export default function RemindersPage() {
                         </span>
                       </td>
                       <td className="px-2 py-3 space-y-2">
+                        <MemberPicker
+                          members={members}
+                          onPick={(name, email) => updateRow(row.id, { speakerName: name, speakerEmail: email })}
+                        />
                         <input
                           type="text"
                           value={row.speakerName}
@@ -257,6 +281,10 @@ export default function RemindersPage() {
                         />
                       </td>
                       <td className="px-2 py-3 space-y-2">
+                        <MemberPicker
+                          members={members}
+                          onPick={(name, email) => updateRow(row.id, { evaluatorName: name, evaluatorEmail: email })}
+                        />
                         <input
                           type="text"
                           value={row.evaluatorName}
@@ -374,6 +402,38 @@ export default function RemindersPage() {
         </footer>
       </div>
     </main>
+  );
+}
+
+// Native <select> roster picker. Filling name+email from the roster avoids
+// manual typing (and typos in emails). Renders nothing when the roster is
+// empty so the manual text inputs are the only surface. Native select gives
+// keyboard + screen-reader support for free; 19 members fits a select fine.
+function MemberPicker({
+  members,
+  onPick,
+}: {
+  members: Member[];
+  onPick: (name: string, email: string) => void;
+}) {
+  if (members.length === 0) return null;
+  return (
+    <select
+      value=""
+      onChange={(e) => {
+        const m = members.find((x) => String(x.id) === e.target.value);
+        if (m) onPick(m.display_name, m.email);
+      }}
+      aria-label="Pick a member to fill name and email"
+      className="w-full px-2 py-1.5 border-2 border-gray-200 rounded-lg text-sm text-gray-600 bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-colors"
+    >
+      <option value="">Pick member…</option>
+      {members.map((m) => (
+        <option key={m.id} value={m.id}>
+          {m.display_name}
+        </option>
+      ))}
+    </select>
   );
 }
 
