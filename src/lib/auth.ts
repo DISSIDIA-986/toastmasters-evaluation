@@ -75,12 +75,20 @@ export async function requireAuth(req: NextRequest): Promise<NextResponse | null
 
 // ---------- Per-meeting submit token ----------
 
-/** Sign a token bound to one meeting id, embedded in the public evaluate page. */
+/**
+ * Sign a token bound to one meeting id, embedded in the public evaluate page.
+ *
+ * TTL is 21d — deliberately SHORTER than the 28-day retention window
+ * (see retention.ts). If a token outlived its meeting, a late submission would
+ * pass token verification and then 500 on the foreign-key insert against the
+ * purged meeting row. Keeping TTL < retention means a too-late submitter gets a
+ * clean "token expired" 403 instead.
+ */
 export async function signMeetingToken(meetingId: number): Promise<string> {
   return new SignJWT({ kind: 'submit', mid: meetingId })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('30d') // long-lived: meetings stay open for late submissions
+    .setExpirationTime('21d')
     .sign(secretKey());
 }
 
