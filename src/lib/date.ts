@@ -10,6 +10,17 @@
  */
 
 const YYMMDD = /^(\d{2})(\d{2})(\d{2})$/;
+const WEEKDAY_TO_INDEX: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+export const CLUB_TIME_ZONE = 'America/Edmonton';
 
 /** Coerce a Postgres DATE value (Date object or ISO string) into a UTC-anchored Date. */
 function toUtcDate(value: string | Date): Date {
@@ -74,4 +85,48 @@ export function parseYyMMdd(input: string): string | null {
     return null;
   }
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** Returns a YYMMDD path segment for a UTC-anchored Date. */
+export function formatYyMMdd(value: Date): string {
+  const year = String(value.getUTCFullYear()).slice(-2);
+  const month = String(value.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(value.getUTCDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+}
+
+/**
+ * Resolve the agenda's stable `/evaluate/go` link to the club meeting date.
+ *
+ * Rule:
+ * - Monday through Thursday => this week's Tuesday
+ * - Friday through Sunday   => next week's Tuesday
+ *
+ * The calculation is anchored to the club's local timezone, not the server's.
+ */
+export function getAgendaEvaluationTargetDate(now = new Date(), timeZone = CLUB_TIME_ZONE): Date {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'short',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = formatter.formatToParts(now);
+  const weekday = parts.find((part) => part.type === 'weekday')?.value;
+  const year = Number(parts.find((part) => part.type === 'year')?.value);
+  const month = Number(parts.find((part) => part.type === 'month')?.value);
+  const day = Number(parts.find((part) => part.type === 'day')?.value);
+
+  if (!weekday || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    throw new Error('Unable to resolve local date parts for evaluation routing');
+  }
+
+  const weekdayIndex = WEEKDAY_TO_INDEX[weekday];
+  const offsetToTuesday =
+    weekdayIndex >= 1 && weekdayIndex <= 4
+      ? 2 - weekdayIndex
+      : ((2 - weekdayIndex + 7) % 7) || 7;
+
+  return new Date(Date.UTC(year, month - 1, day + offsetToTuesday));
 }
