@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateGeneralEvaluatorReport, deleteGeneralEvaluatorReport } from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAuth(request);
+  if (denied) return denied;
   try {
     const { id } = await params;
     const reportId = parseInt(id);
@@ -40,6 +43,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAuth(request);
+  if (denied) return denied;
   try {
     const { id } = await params;
     const reportId = parseInt(id);

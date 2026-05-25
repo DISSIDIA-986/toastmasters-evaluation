@@ -6,12 +6,15 @@ import {
   createTimerReport,
   createGeneralEvaluatorReport,
 } from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET all reports for a meeting
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ meetingId: string }> }
 ) {
+  const denied = await requireAuth(request);
+  if (denied) return denied;
   try {
     const { meetingId } = await params;
     const id = parseInt(meetingId);
@@ -39,6 +42,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ meetingId: string }> }
 ) {
+  const denied = await requireAuth(request);
+  if (denied) return denied;
   try {
     const { meetingId } = await params;
     const id = parseInt(meetingId);

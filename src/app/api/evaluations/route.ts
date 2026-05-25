@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createEvaluation, getAllEvaluations } from '@/lib/db';
+import { requireAuth, verifyMeetingToken } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Protected: returns every evaluation across all meetings.
+  const denied = await requireAuth(request);
+  if (denied) return denied;
   try {
     const evaluations = await getAllEvaluations();
     return NextResponse.json(evaluations);
@@ -14,11 +18,15 @@ export async function GET() {
   }
 }
 
+// Public: the QR evaluate form posts here. Not behind requireAuth, but gated by
+// a signed per-meeting submit token (light protection: blocks drive-by API
+// posts and cross-meeting replay; not a throttle, not replay-proof in-meeting).
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
       meeting_id,
+      submit_token,
       evaluator_name,
       speaker_name,
       speech_type,
@@ -33,6 +41,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
+      );
+    }
+
+    // Submit token must be signed for exactly this meeting.
+    if (!(await verifyMeetingToken(submit_token, meeting_id))) {
+      return NextResponse.json(
+        { error: 'Invalid or missing submission token' },
+        { status: 403 }
       );
     }
 

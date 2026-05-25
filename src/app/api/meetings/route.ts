@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMeeting, getMeetings } from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const denied = await requireAuth(request);
+  if (denied) return denied;
   try {
     const meetings = await getMeetings();
     return NextResponse.json(meetings);
@@ -15,6 +18,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireAuth(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const { name, date } = body;

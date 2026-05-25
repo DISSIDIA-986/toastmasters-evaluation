@@ -41,25 +41,11 @@ export default function AdminPage() {
   const [showQRCode, setShowQRCode] = useState(false);
   const [showStatisticianReport, setShowStatisticianReport] = useState(false);
   const [showGeneralEvaluatorReport, setShowGeneralEvaluatorReport] = useState(false);
-  const [dbInitialized, setDbInitialized] = useState(false);
 
-  // Initialize database on first load
+  // Schema is created at deploy via `npm run db:init` (scripts/init-db.ts),
+  // not from the client on load (a public DDL endpoint was a deploy hazard).
+  // The admin page just reads data.
   useEffect(() => {
-    const initDb = async () => {
-      try {
-        await fetch('/api/init');
-        setDbInitialized(true);
-      } catch (error) {
-        console.error('Failed to initialize database:', error);
-      }
-    };
-    initDb();
-  }, []);
-
-  // Fetch meetings
-  useEffect(() => {
-    if (!dbInitialized) return;
-
     const fetchMeetings = async () => {
       try {
         const response = await fetch('/api/meetings');
@@ -74,7 +60,7 @@ export default function AdminPage() {
       }
     };
     fetchMeetings();
-  }, [dbInitialized]);
+  }, []);
 
   // Fetch evaluations for selected meeting
   useEffect(() => {
