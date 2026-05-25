@@ -1,5 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { AhUmEntry, GrammarEntry, TimerEntry, EvaluatorFeedback, FunctionaryFeedback } from './types';
+import { retentionCutoffIso, RETENTION_DAYS } from './retention';
 
 // Initialize database tables
 export async function initializeDatabase() {
@@ -132,6 +133,19 @@ export async function getMeetingByDate(dateIso: string) {
     SELECT * FROM meetings WHERE date = ${dateIso} ORDER BY id ASC LIMIT 1
   `;
   return result.rows[0];
+}
+
+/**
+ * Purge meetings older than the retention window. ON DELETE CASCADE clears the
+ * meeting's evaluations and all report rows. The cutoff is computed in JS and
+ * passed as a bound DATE param (no string interpolation). Returns rows deleted.
+ */
+export async function purgeOldMeetings(days: number = RETENTION_DAYS) {
+  const cutoff = retentionCutoffIso(new Date(), days);
+  const result = await sql`
+    DELETE FROM meetings WHERE date < ${cutoff} RETURNING id
+  `;
+  return result.rows.length;
 }
 
 // ============ Member (roster) operations ============
