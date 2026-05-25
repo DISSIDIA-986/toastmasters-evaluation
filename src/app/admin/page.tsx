@@ -6,6 +6,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Meeting, Evaluation, SPEECH_TYPES } from '@/lib/types';
 import StatisticianReport from '@/components/StatisticianReport';
 import GeneralEvaluatorReport from '@/components/GeneralEvaluatorReport';
+import MembersManager from '@/components/MembersManager';
+import SpeakerDigestSender from '@/components/SpeakerDigestSender';
 import { formatMeetingDateLong, formatMeetingDateShort } from '@/lib/date';
 
 // P0 Security: Sanitize CSV values to prevent formula injection
@@ -41,25 +43,21 @@ export default function AdminPage() {
   const [showQRCode, setShowQRCode] = useState(false);
   const [showStatisticianReport, setShowStatisticianReport] = useState(false);
   const [showGeneralEvaluatorReport, setShowGeneralEvaluatorReport] = useState(false);
-  const [dbInitialized, setDbInitialized] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
+  const [showDigestSender, setShowDigestSender] = useState(false);
 
-  // Initialize database on first load
+  const handleSignOut = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+    } finally {
+      window.location.href = '/login';
+    }
+  };
+
+  // Schema is created at deploy via `npm run db:init` (scripts/init-db.ts),
+  // not from the client on load (a public DDL endpoint was a deploy hazard).
+  // The admin page just reads data.
   useEffect(() => {
-    const initDb = async () => {
-      try {
-        await fetch('/api/init');
-        setDbInitialized(true);
-      } catch (error) {
-        console.error('Failed to initialize database:', error);
-      }
-    };
-    initDb();
-  }, []);
-
-  // Fetch meetings
-  useEffect(() => {
-    if (!dbInitialized) return;
-
     const fetchMeetings = async () => {
       try {
         const response = await fetch('/api/meetings');
@@ -74,7 +72,7 @@ export default function AdminPage() {
       }
     };
     fetchMeetings();
-  }, [dbInitialized]);
+  }, []);
 
   // Fetch evaluations for selected meeting
   useEffect(() => {
@@ -270,14 +268,28 @@ export default function AdminPage() {
               Admin
             </Link>
             <button
+              onClick={() => setShowMembers(true)}
+              className="text-gray-700 font-medium px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+            >
+              Roster
+            </button>
+            <button
               onClick={() => setShowCreateForm(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
             >
               + New Meeting
             </button>
+            <button
+              onClick={handleSignOut}
+              className="text-gray-500 text-sm hover:text-gray-800 transition"
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </nav>
+
+      <MembersManager open={showMembers} onClose={() => setShowMembers(false)} />
 
       <main className="max-w-6xl mx-auto p-4">
         <div className="grid md:grid-cols-3 gap-6">
@@ -358,9 +370,16 @@ export default function AdminPage() {
                       <button
                         onClick={sendViaEmail}
                         disabled={evaluations.length === 0}
+                        className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-200 transition disabled:opacity-50"
+                      >
+                        Mail (manual)
+                      </button>
+                      <button
+                        onClick={() => setShowDigestSender(true)}
+                        disabled={evaluations.length === 0}
                         className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition disabled:opacity-50"
                       >
-                        Send to Mail
+                        Send feedback
                       </button>
                     </div>
                   </div>
@@ -593,6 +612,16 @@ export default function AdminPage() {
           meetingId={selectedMeeting.id}
           meetingName={selectedMeeting.name}
           onClose={() => setShowGeneralEvaluatorReport(false)}
+        />
+      )}
+
+      {/* Send Speaker Feedback (P4) */}
+      {showDigestSender && selectedMeeting && (
+        <SpeakerDigestSender
+          meeting={selectedMeeting}
+          evaluations={evaluations}
+          open={showDigestSender}
+          onClose={() => setShowDigestSender(false)}
         />
       )}
     </div>

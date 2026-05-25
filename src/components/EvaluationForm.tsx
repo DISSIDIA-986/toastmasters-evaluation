@@ -6,6 +6,8 @@ import { SPEECH_TYPES, EvaluationFormData } from '@/lib/types';
 
 interface EvaluationFormProps {
   meetingId: number;
+  /** Signed per-meeting token from the server page; sent back on submit. */
+  submitToken?: string;
   onSuccess?: () => void;
 }
 
@@ -21,7 +23,7 @@ const initialFormData: EvaluationFormData = {
   comments: '',
 };
 
-export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormProps) {
+export default function EvaluationForm({ meetingId, submitToken, onSuccess }: EvaluationFormProps) {
   const [formData, setFormData] = useState<EvaluationFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitState, setSubmitState] = useState<'idle' | 'submitted'>('idle');
@@ -74,6 +76,7 @@ export default function EvaluationForm({ meetingId, onSuccess }: EvaluationFormP
         body: JSON.stringify({
           ...formData,
           meeting_id: meetingId,
+          submit_token: submitToken,
         }),
       });
 

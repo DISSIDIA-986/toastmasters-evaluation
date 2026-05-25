@@ -5,6 +5,15 @@ export interface Meeting {
   created_at: string;
 }
 
+// Club roster member. `display_name` is the canonical label (e.g. "Daniel B.").
+export interface Member {
+  id: number;
+  display_name: string;
+  email: string;
+  active: boolean;
+  created_at: string;
+}
+
 export interface Evaluation {
   id: number;
   meeting_id: number;

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMeetingById, getEvaluationsByMeeting } from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Protected: this returns the meeting's full evaluations list.
+  const denied = await requireAuth(request);
+  if (denied) return denied;
   try {
     const { id } = await params;
     const meetingId = parseInt(id);

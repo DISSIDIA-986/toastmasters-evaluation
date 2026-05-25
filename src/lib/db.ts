@@ -1,5 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { AhUmEntry, GrammarEntry, TimerEntry, EvaluatorFeedback, FunctionaryFeedback } from './types';
+import { retentionCutoffIso, RETENTION_DAYS } from './retention';
 
 // Initialize database tables
 export async function initializeDatabase() {
@@ -8,6 +9,20 @@ export async function initializeDatabase() {
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       date DATE NOT NULL DEFAULT CURRENT_DATE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Club roster. display_name (not first_name) is the canonical label — the
+  // real data is "Daniel B." / "Daniel I.", already display names. email is
+  // unique so the seed is idempotent. active=false retires a member without
+  // deleting history.
+  await sql`
+    CREATE TABLE IF NOT EXISTS members (
+      id SERIAL PRIMARY KEY,
+      display_name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
@@ -118,6 +133,76 @@ export async function getMeetingByDate(dateIso: string) {
     SELECT * FROM meetings WHERE date = ${dateIso} ORDER BY id ASC LIMIT 1
   `;
   return result.rows[0];
+}
+
+/**
+ * Purge meetings older than the retention window. ON DELETE CASCADE clears the
+ * meeting's evaluations and all report rows. The cutoff is computed in JS and
+ * passed as a bound DATE param (no string interpolation). Returns rows deleted.
+ */
+export async function purgeOldMeetings(days: number = RETENTION_DAYS) {
+  const cutoff = retentionCutoffIso(new Date(), days);
+  const result = await sql`
+    DELETE FROM meetings WHERE date < ${cutoff} RETURNING id
+  `;
+  return result.rows.length;
+}
+
+// ============ Member (roster) operations ============
+
+export async function getMembers() {
+  const result = await sql`
+    SELECT id, display_name, email, active, created_at
+    FROM members ORDER BY display_name ASC
+  `;
+  return result.rows;
+}
+
+export async function getActiveMembers() {
+  const result = await sql`
+    SELECT id, display_name, email, active, created_at
+    FROM members WHERE active = TRUE ORDER BY display_name ASC
+  `;
+  return result.rows;
+}
+
+/**
+ * Insert a member. Idempotent on email: re-seeding updates the display name
+ * and reactivates rather than erroring on the UNIQUE(email) constraint.
+ */
+export async function upsertMember(displayName: string, email: string) {
+  const result = await sql`
+    INSERT INTO members (display_name, email)
+    VALUES (${displayName}, ${email})
+    ON CONFLICT (email) DO UPDATE
+      SET display_name = EXCLUDED.display_name, active = TRUE
+    RETURNING id, display_name, email, active, created_at
+  `;
+  return result.rows[0];
+}
+
+export async function getMemberById(id: number) {
+  const result = await sql`
+    SELECT id, display_name, email, active, created_at FROM members WHERE id = ${id}
+  `;
+  return result.rows[0];
+}
+
+export async function updateMember(
+  id: number,
+  data: { display_name: string; email: string; active: boolean },
+) {
+  const result = await sql`
+    UPDATE members
+    SET display_name = ${data.display_name}, email = ${data.email}, active = ${data.active}
+    WHERE id = ${id}
+    RETURNING id, display_name, email, active, created_at
+  `;
+  return result.rows[0];
+}
+
+export async function deleteMember(id: number) {
+  await sql`DELETE FROM members WHERE id = ${id}`;
 }
 
 // Evaluation operations

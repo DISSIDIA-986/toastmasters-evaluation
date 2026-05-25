@@ -1,6 +1,7 @@
 import { getMeetingById, getMeetingByDate } from '@/lib/db';
 import EvaluationForm from '@/components/EvaluationForm';
 import { formatMeetingDateLong, parseYyMMdd } from '@/lib/date';
+import { signMeetingToken } from '@/lib/auth';
 import { notFound } from 'next/navigation';
 
 const NUMERIC_ID = /^\d+$/;
@@ -44,6 +45,10 @@ export default async function EvaluatePage({ params }: Props) {
 
   const formattedDate = formatMeetingDateLong(meeting.date);
 
+  // Sign a submit token bound to this meeting. Embedded in the public form and
+  // verified on POST — blocks drive-by API posts and cross-meeting replay.
+  const submitToken = await signMeetingToken(meeting.id);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -57,7 +62,7 @@ export default async function EvaluatePage({ params }: Props) {
 
       {/* Form */}
       <main className="max-w-lg mx-auto p-4 -mt-4">
-        <EvaluationForm meetingId={meeting.id} />
+        <EvaluationForm meetingId={meeting.id} submitToken={submitToken} />
       </main>
 
       {/* Footer */}
