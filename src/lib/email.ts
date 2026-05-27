@@ -12,6 +12,10 @@ import type { Evaluation } from './types';
 
 const DEFAULT_FROM = 'Spoken Word Club <onboarding@resend.dev>';
 
+// Replies go to REPLY_TO (the club's official Gmail) so members who reply reach
+// the Executive Committee inbox — without sending FROM gmail.com (impossible
+// without controlling its DNS) and without touching the shared Gmail account
+// (no 2-Step Verification, no App Password).
 export function emailFrom(): string {
   return process.env.EMAIL_FROM || DEFAULT_FROM;
 }
@@ -88,6 +92,7 @@ export async function sendSpeakerDigest(args: {
   try {
     const { data, error } = await getResend().emails.send({
       from: emailFrom(),
+      replyTo: process.env.REPLY_TO || undefined,
       to: args.to,
       subject,
       html,
@@ -108,6 +113,7 @@ export async function sendEmail(args: {
   try {
     const { data, error } = await getResend().emails.send({
       from: emailFrom(),
+      replyTo: process.env.REPLY_TO || undefined,
       to: args.to,
       subject: args.subject,
       html: args.html,
