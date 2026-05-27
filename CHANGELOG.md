@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project uses semver.
 
+## [0.2.1] - 2026-05-27
+
+### Fixed
+- **Evaluation form readability**: placeholder text is now darker (gray-600, ~7:1
+  contrast) across all forms — reported as hard to read for low-vision members.
+- **Pick names, don't type them**: evaluator and speaker on the public evaluation
+  form, and every person field in the Statistician and General Evaluator reports,
+  are now roster dropdowns with a "Guest / other" option for non-members. Falls
+  back to a text input if the roster can't load.
+
 ## [0.2.0] - 2026-05-25
 
 Turns the tool from a public, unauthenticated evaluation collector into a club
