@@ -3,6 +3,14 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project uses semver.
 
+## [0.2.2] - 2026-05-27
+
+### Changed
+- Feedback emails now set a **Reply-To** of the club's official Gmail
+  (spokenwordcalgary@gmail.com), so anyone who replies reaches the Executive
+  Committee inbox. Sender stays the verified club domain — no change to the
+  shared Gmail account (no 2-Step Verification, no app password).
+
 ## [0.2.1] - 2026-05-27
 
 ### Fixed
