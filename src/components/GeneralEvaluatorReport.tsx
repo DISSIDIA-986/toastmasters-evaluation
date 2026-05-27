@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PersonSelect, { PersonOption } from './PersonSelect';
 import {
   EvaluatorFeedback,
   FunctionaryFeedback,
@@ -27,6 +28,21 @@ export default function GeneralEvaluatorReport({
   const [activeTab, setActiveTab] = useState<ReportTab>('evaluators');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [members, setMembers] = useState<PersonOption[]>([]);
+
+  // Roster for the evaluator/speaker/person pickers (admin-side, authed endpoint).
+  useEffect(() => {
+    fetch('/api/members')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) =>
+        setMembers(
+          Array.isArray(data)
+            ? data.filter((m) => m.active).map((m) => ({ id: m.id, display_name: m.display_name }))
+            : [],
+        ),
+      )
+      .catch(() => setMembers([]));
+  }, []);
 
   // Existing reports
   const [reports, setReports] = useState<GeneralEvaluatorReportType[]>([]);
@@ -284,11 +300,11 @@ export default function GeneralEvaluatorReport({
               <label className="block text-lg font-bold text-gray-800 mb-2">
                 Your Name
               </label>
-              <input
-                type="text"
+              <PersonSelect
+                ariaLabel="Your name (General Evaluator)"
+                members={members}
                 value={form.reporter_name}
-                onChange={(e) => setForm((prev) => ({ ...prev, reporter_name: e.target.value }))}
-                className="w-full px-4 py-3 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-colors"
+                onChange={(name) => setForm((prev) => ({ ...prev, reporter_name: name }))}
                 placeholder="Enter General Evaluator's name"
               />
             </div>
@@ -330,13 +346,11 @@ export default function GeneralEvaluatorReport({
                               <label className="block text-sm font-bold text-gray-700 mb-1">
                                 Evaluator Name
                               </label>
-                              <input
-                                type="text"
+                              <PersonSelect
+                                ariaLabel="Evaluator name"
+                                members={members}
                                 value={feedback.evaluator_name}
-                                onChange={(e) =>
-                                  updateEvaluatorFeedback(idx, 'evaluator_name', e.target.value)
-                                }
-                                className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100"
+                                onChange={(name) => updateEvaluatorFeedback(idx, 'evaluator_name', name)}
                                 placeholder="Name"
                               />
                             </div>
@@ -344,13 +358,11 @@ export default function GeneralEvaluatorReport({
                               <label className="block text-sm font-bold text-gray-700 mb-1">
                                 Speaker Evaluated
                               </label>
-                              <input
-                                type="text"
+                              <PersonSelect
+                                ariaLabel="Speaker evaluated"
+                                members={members}
                                 value={feedback.speaker_evaluated}
-                                onChange={(e) =>
-                                  updateEvaluatorFeedback(idx, 'speaker_evaluated', e.target.value)
-                                }
-                                className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100"
+                                onChange={(name) => updateEvaluatorFeedback(idx, 'speaker_evaluated', name)}
                                 placeholder="Speaker"
                               />
                             </div>
@@ -451,13 +463,11 @@ export default function GeneralEvaluatorReport({
                               <label className="block text-sm font-bold text-gray-700 mb-1">
                                 Person Name
                               </label>
-                              <input
-                                type="text"
+                              <PersonSelect
+                                ariaLabel="Person name"
+                                members={members}
                                 value={feedback.person_name}
-                                onChange={(e) =>
-                                  updateFunctionaryFeedback(idx, 'person_name', e.target.value)
-                                }
-                                className="w-full px-3 py-3 border border-gray-200 rounded-lg"
+                                onChange={(name) => updateFunctionaryFeedback(idx, 'person_name', name)}
                                 placeholder="Name"
                               />
                             </div>
