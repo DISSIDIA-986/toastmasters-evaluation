@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useRef } from 'react';
 import QuickCriteria from './QuickCriteria';
+import PersonSelect, { PersonOption } from './PersonSelect';
 import { SPEECH_TYPES, EvaluationFormData } from '@/lib/types';
 
 interface EvaluationFormProps {
   meetingId: number;
   /** Signed per-meeting token from the server page; sent back on submit. */
   submitToken?: string;
+  /** Active roster (names only) from the server page. Empty → name fields fall back to text input. */
+  members?: PersonOption[];
   onSuccess?: () => void;
 }
 
@@ -23,7 +26,7 @@ const initialFormData: EvaluationFormData = {
   comments: '',
 };
 
-export default function EvaluationForm({ meetingId, submitToken, onSuccess }: EvaluationFormProps) {
+export default function EvaluationForm({ meetingId, submitToken, members = [], onSuccess }: EvaluationFormProps) {
   const [formData, setFormData] = useState<EvaluationFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitState, setSubmitState] = useState<'idle' | 'submitted'>('idle');
@@ -133,19 +136,13 @@ export default function EvaluationForm({ meetingId, submitToken, onSuccess }: Ev
             <label htmlFor="evaluator-name" className="block text-lg font-medium text-gray-700 mb-2">
               Your Name (Evaluator)
             </label>
-            <input
+            <PersonSelect
               id="evaluator-name"
-              name="evaluator-name"
-              type="text"
-              autoComplete="name"
-              autoCapitalize="words"
-              autoCorrect="off"
-              spellCheck={false}
-              enterKeyHint="next"
+              ariaLabel="Your name (evaluator)"
+              members={members}
               value={formData.evaluator_name}
-              onChange={(e) => setFormData((prev) => ({ ...prev, evaluator_name: e.target.value }))}
+              onChange={(name) => setFormData((prev) => ({ ...prev, evaluator_name: name }))}
               placeholder="Enter your name"
-              className="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors"
             />
           </div>
 
@@ -153,20 +150,14 @@ export default function EvaluationForm({ meetingId, submitToken, onSuccess }: Ev
             <label htmlFor="speaker-name" className="block text-lg font-medium text-gray-700 mb-2">
               Speaker Name
             </label>
-            <input
-              ref={speakerInputRef}
+            <PersonSelect
               id="speaker-name"
-              name="speaker-name"
-              type="text"
-              autoComplete="off"
-              autoCapitalize="words"
-              autoCorrect="off"
-              spellCheck={false}
-              enterKeyHint="next"
+              ariaLabel="Speaker name"
+              members={members}
               value={formData.speaker_name}
-              onChange={(e) => setFormData((prev) => ({ ...prev, speaker_name: e.target.value }))}
+              onChange={(name) => setFormData((prev) => ({ ...prev, speaker_name: name }))}
               placeholder="Enter speaker's name"
-              className="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-colors"
+              inputRef={speakerInputRef}
             />
           </div>
 

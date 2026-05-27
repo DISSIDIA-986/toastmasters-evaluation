@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Darker placeholder text for legibility. Browser/Tailwind defaults are ~#a9a9a9
+ * (contrast ~2.5:1, hard to read for low-vision users — reported at a club meeting).
+ * gray-600 on white is ~7:1 (passes WCAG AA), still clearly lighter than the
+ * entered text (gray-900). opacity:1 stops Firefox/Tailwind from re-fading it.
+ */
+input::placeholder,
+textarea::placeholder {
+  color: #4b5563;
+  opacity: 1;
+}

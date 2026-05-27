@@ -1,4 +1,4 @@
-import { getMeetingById, getMeetingByDate } from '@/lib/db';
+import { getMeetingById, getMeetingByDate, getActiveMembers } from '@/lib/db';
 import EvaluationForm from '@/components/EvaluationForm';
 import { formatMeetingDateLong, parseYyMMdd } from '@/lib/date';
 import { signMeetingToken } from '@/lib/auth';
@@ -49,6 +49,17 @@ export default async function EvaluatePage({ params }: Props) {
   // verified on POST — blocks drive-by API posts and cross-meeting replay.
   const submitToken = await signMeetingToken(meeting.id);
 
+  // Active roster for the speaker/evaluator pickers. NAMES ONLY — never emails —
+  // even though this page is public. Falls back to [] on any error so the form
+  // still renders (PersonSelect degrades to plain text input).
+  let members: { id: number; display_name: string }[] = [];
+  try {
+    const rows = await getActiveMembers();
+    members = rows.map((m) => ({ id: m.id as number, display_name: m.display_name as string }));
+  } catch {
+    members = [];
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -62,7 +73,7 @@ export default async function EvaluatePage({ params }: Props) {
 
       {/* Form */}
       <main className="max-w-lg mx-auto p-4 -mt-4">
-        <EvaluationForm meetingId={meeting.id} submitToken={submitToken} />
+        <EvaluationForm meetingId={meeting.id} submitToken={submitToken} members={members} />
       </main>
 
       {/* Footer */}

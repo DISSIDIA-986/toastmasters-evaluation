@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PersonSelect, { PersonOption } from './PersonSelect';
 import {
   AhUmEntry,
   AhUmReport,
@@ -30,6 +31,21 @@ export default function StatisticianReport({
   const [activeTab, setActiveTab] = useState<ReportTab>('ah_um');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [members, setMembers] = useState<PersonOption[]>([]);
+
+  // Roster for the speaker/reporter pickers (admin-side, authed endpoint).
+  useEffect(() => {
+    fetch('/api/members')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) =>
+        setMembers(
+          Array.isArray(data)
+            ? data.filter((m) => m.active).map((m) => ({ id: m.id, display_name: m.display_name }))
+            : [],
+        ),
+      )
+      .catch(() => setMembers([]));
+  }, []);
 
   // Report data
   const [ahUmReports, setAhUmReports] = useState<AhUmReport[]>([]);
@@ -300,13 +316,11 @@ export default function StatisticianReport({
                   <label className="block text-sm font-bold text-gray-700 mb-2">
                     Your Name
                   </label>
-                  <input
-                    type="text"
+                  <PersonSelect
+                    ariaLabel="Your name (Ah-Um reporter)"
+                    members={members}
                     value={ahUmForm.reporter_name}
-                    onChange={(e) =>
-                      setAhUmForm((prev) => ({ ...prev, reporter_name: e.target.value }))
-                    }
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500"
+                    onChange={(name) => setAhUmForm((prev) => ({ ...prev, reporter_name: name }))}
                     placeholder="Enter your name"
                   />
                 </div>
@@ -331,15 +345,15 @@ export default function StatisticianReport({
                     {ahUmForm.entries.map((entry, idx) => (
                       <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div className="bg-gray-50 px-5 py-3 border-b flex justify-between items-center">
-                          <input
-                            type="text"
+                          <PersonSelect
+                            ariaLabel="Speaker name"
+                            members={members}
                             value={entry.speaker_name}
-                            onChange={(e) => {
+                            onChange={(name) => {
                               const newEntries = [...ahUmForm.entries];
-                              newEntries[idx].speaker_name = e.target.value;
+                              newEntries[idx].speaker_name = name;
                               setAhUmForm((prev) => ({ ...prev, entries: newEntries }));
                             }}
-                            className="bg-transparent font-bold text-gray-800 placeholder-gray-400 focus:outline-none w-full"
                             placeholder="Enter Speaker Name..."
                           />
                           <button
@@ -435,13 +449,11 @@ export default function StatisticianReport({
                     <label className="block text-sm font-bold text-gray-700 mb-1">
                       Your Name
                     </label>
-                    <input
-                      type="text"
+                    <PersonSelect
+                      ariaLabel="Your name (Grammarian)"
+                      members={members}
                       value={grammarianForm.reporter_name}
-                      onChange={(e) =>
-                        setGrammarianForm((prev) => ({ ...prev, reporter_name: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl"
+                      onChange={(name) => setGrammarianForm((prev) => ({ ...prev, reporter_name: name }))}
                       placeholder="Enter name"
                     />
                   </div>
@@ -546,16 +558,16 @@ export default function StatisticianReport({
                                 <div className="space-y-3">
                                     <div>
                                         <label className="block text-xs font-bold text-gray-600 mb-1">Speaker</label>
-                                        <input
-                                            type="text"
-                                            value={entry.speaker_name}
-                                            onChange={(e) => {
-                                                const newEntries = [...grammarianForm.entries];
-                                                newEntries[idx].speaker_name = e.target.value;
-                                                setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
-                                            }}
-                                            className="w-full px-3 py-2 border rounded-lg"
-                                            placeholder="Who spoke?"
+                                        <PersonSelect
+                                          ariaLabel="Speaker name"
+                                          members={members}
+                                          value={entry.speaker_name}
+                                          onChange={(name) => {
+                                            const newEntries = [...grammarianForm.entries];
+                                            newEntries[idx].speaker_name = name;
+                                            setGrammarianForm((prev) => ({ ...prev, entries: newEntries }));
+                                          }}
+                                          placeholder="Who spoke?"
                                         />
                                     </div>
                                     <div>
@@ -614,13 +626,11 @@ export default function StatisticianReport({
                     <label className="block text-sm font-bold text-gray-700 mb-1">
                       Your Name
                     </label>
-                    <input
-                      type="text"
+                    <PersonSelect
+                      ariaLabel="Your name (Timer)"
+                      members={members}
                       value={timerForm.reporter_name}
-                      onChange={(e) =>
-                        setTimerForm((prev) => ({ ...prev, reporter_name: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl"
+                      onChange={(name) => setTimerForm((prev) => ({ ...prev, reporter_name: name }))}
                       placeholder="Enter name"
                     />
                   </div>
@@ -702,16 +712,16 @@ export default function StatisticianReport({
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-gray-600 mb-1">Speaker</label>
-                                        <input
-                                            type="text"
-                                            value={entry.speaker_name}
-                                            onChange={(e) => {
-                                                const newEntries = [...timerForm.entries];
-                                                newEntries[idx].speaker_name = e.target.value;
-                                                setTimerForm((prev) => ({ ...prev, entries: newEntries }));
-                                            }}
-                                            className="w-full px-3 py-2 border rounded-lg"
-                                            placeholder="Name"
+                                        <PersonSelect
+                                          ariaLabel="Speaker name"
+                                          members={members}
+                                          value={entry.speaker_name}
+                                          onChange={(name) => {
+                                            const newEntries = [...timerForm.entries];
+                                            newEntries[idx].speaker_name = name;
+                                            setTimerForm((prev) => ({ ...prev, entries: newEntries }));
+                                          }}
+                                          placeholder="Name"
                                         />
                                     </div>
                                     <div>
