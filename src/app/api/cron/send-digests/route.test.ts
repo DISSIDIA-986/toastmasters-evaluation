@@ -3,10 +3,9 @@ import { NextRequest } from 'next/server';
 import { GET } from './route';
 
 // The scheduled send must reject anything without the correct CRON_SECRET so it
-// can't be fired externally to spam members. These reject paths return before
-// any DB call, so no DB mock is needed. CRON_SECRET is set explicitly so the
-// auth check (not the "not configured" guard) is what runs.
-describe('/api/cron/send-digests auth', () => {
+// can't be fired externally to spam members. These reject paths (and the date
+// validation) return before any DB call, so no DB mock is needed.
+describe('/api/cron/send-digests auth + validation', () => {
   beforeEach(() => {
     process.env.CRON_SECRET = 'test-secret';
   });
@@ -28,5 +27,13 @@ describe('/api/cron/send-digests auth', () => {
     delete process.env.CRON_SECRET;
     const res = await GET(new NextRequest('http://localhost/api/cron/send-digests'));
     expect(res.status).toBe(500);
+  });
+
+  it('rejects a malformed ?date (authorized, but bad format) before any DB call', async () => {
+    const req = new NextRequest('http://localhost/api/cron/send-digests?date=yesterday', {
+      headers: { authorization: 'Bearer test-secret' },
+    });
+    const res = await GET(req);
+    expect(res.status).toBe(400);
   });
 });

@@ -13,21 +13,28 @@ import type { Evaluation, Member } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
  * Scheduled speaker-digest send — Nelson's call: Option 2 (one consolidated
  * email per speaker), automatically at 8 PM after the meeting.
  *
- * Trigger: Vercel Cron `0 2,3 * * *` (see vercel.json). Vercel sends
- * `Authorization: Bearer ${CRON_SECRET}`; we reject anything else so the
- * endpoint can't be fired externally to spam members. Fires at BOTH 02:00 and
- * 03:00 UTC because 8 PM America/Edmonton is one or the other depending on DST;
- * isSendHour() gates so exactly one firing per day actually sends, at 8 PM
- * local. (A timezone-aware external scheduler hitting this once at 20:00 local
- * also passes the gate, so the trigger is swappable.)
+ * Unattended trigger: an external scheduler (cron-job.org, timezone-aware) hits
+ * this every Tuesday at 20:00 America/Edmonton with `Authorization: Bearer
+ * ${CRON_SECRET}`. We reject anything else so it can't be fired externally to
+ * spam members. The local-hour gate (isSendHour) is a second guard: the
+ * unattended path only sends at 8 PM local even if the trigger misfires.
+ *
+ * Admin / test overrides (still require CRON_SECRET):
+ *  - `?date=YYYY-MM-DD` targets a specific meeting instead of "today", and
+ *    bypasses the 8 PM gate (an explicit date is a deliberate catch-up/re-send,
+ *    not the unattended path).
+ *  - `?dryRun=1` reports who WOULD be emailed without sending or logging.
  *
  * Adversarially reviewed:
  *  - Idempotent: digest_log UNIQUE(meeting_id, speaker_name); an already-sent
- *    speaker is skipped, so re-fires and late ballots never double-send.
+ *    speaker is skipped, so re-fires, late ballots, and manual resends never
+ *    double-send.
  *  - Best-effort per speaker: one failed send doesn't abort the batch, and an
  *    unsent speaker stays unlogged so the next eligible run retries.
  *  - No human in the loop → only auto-send to an EXACTLY and UNIQUELY matched
@@ -45,16 +52,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { dateIso, hour } = edmontonNow();
-  if (!isSendHour()) {
-    // Wrong half of the DST pair (or an off-hour ping) — do nothing.
+  const params = request.nextUrl.searchParams;
+  const dateParam = params.get('date');
+  const dryRun = ['1', 'true', 'yes'].includes((params.get('dryRun') || '').toLowerCase());
+
+  if (dateParam !== null && !DATE_RE.test(dateParam)) {
+    return NextResponse.json({ error: 'date must be YYYY-MM-DD' }, { status: 400 });
+  }
+
+  const { dateIso: todayIso, hour } = edmontonNow();
+  const dateIso = dateParam || todayIso;
+
+  // The 8 PM gate guards only the unattended path. An explicit ?date is a
+  // deliberate admin/test trigger and runs immediately.
+  if (!dateParam && !isSendHour()) {
     return NextResponse.json({ skipped: 'not send hour', local_hour: hour });
   }
 
   try {
     const meeting = await getMeetingByDate(dateIso);
     if (!meeting) {
-      return NextResponse.json({ sent: 0, reason: 'no meeting today', date: dateIso });
+      return NextResponse.json({ sent: 0, reason: 'no meeting on date', date: dateIso });
     }
 
     const [evalRows, memberRows] = await Promise.all([
@@ -75,6 +93,7 @@ export async function GET(request: NextRequest) {
     const meetingDate = formatMeetingDateLong(meeting.date);
     let sent = 0;
     const skipped = { already_sent: 0, no_match: 0, ambiguous: 0, send_failed: 0 };
+    const wouldSend: { speaker: string; to: string; ballots: number }[] = [];
 
     for (const [speakerName, evals] of bySpeaker) {
       if (await hasDigestBeenSent(meeting.id, speakerName)) {
@@ -91,6 +110,10 @@ export async function GET(request: NextRequest) {
         continue;
       }
       const member = matches[0];
+      if (dryRun) {
+        wouldSend.push({ speaker: speakerName, to: member.email, ballots: evals.length });
+        continue;
+      }
       const result = await sendSpeakerDigest({
         to: member.email,
         speakerName: member.display_name,
@@ -107,6 +130,9 @@ export async function GET(request: NextRequest) {
       sent++;
     }
 
+    if (dryRun) {
+      return NextResponse.json({ dryRun: true, meeting_id: meeting.id, date: dateIso, wouldSend, skipped });
+    }
     console.log(`Scheduled digests for meeting ${meeting.id}: sent=${sent}`, skipped);
     return NextResponse.json({ meeting_id: meeting.id, date: dateIso, sent, skipped });
   } catch (error) {
