@@ -11,8 +11,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); this project use
   feedback, sent automatically at 8 PM club time. A new `digest_log` table makes
   it idempotent — re-runs, late ballots, and manual resends never double-send.
   Only exact, unique roster matches are auto-sent; guests / ambiguous names are
-  left for the admin to send manually. Triggered by Vercel Cron (`0 2,3 * * *`)
-  with a local-time gate so the send stays at exactly 8 PM across daylight saving.
+  left for the admin to send manually. Triggered every Tuesday 8 PM by an external
+  timezone-aware scheduler (cron-job.org) that calls the send endpoint; the
+  endpoint keeps a local-time (America/Edmonton) gate so the send lands at exactly
+  8 PM across daylight saving. (Vercel's native cron can't do this on the Hobby
+  plan, which caps crons at once per day.)
+- **Admin re-send / catch-up**: the send endpoint takes `?date=YYYY-MM-DD` to send
+  a specific past meeting's digests on demand, and `?dryRun=1` to preview who would
+  be emailed without sending. Both still require the cron secret.
 
 ## [0.2.2] - 2026-05-27
 
