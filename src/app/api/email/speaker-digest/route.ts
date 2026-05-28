@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMeetingById, getEvaluationsBySpeaker, getMemberById } from '@/lib/db';
+import { getMeetingById, getEvaluationsBySpeaker, getMemberById, recordDigestSent } from '@/lib/db';
 import { sendSpeakerDigest } from '@/lib/email';
 import { requireAuth } from '@/lib/auth';
 import { formatMeetingDateLong } from '@/lib/date';
@@ -54,6 +54,9 @@ export async function POST(request: NextRequest) {
     if (!result.ok) {
       return NextResponse.json({ error: result.error || 'Send failed' }, { status: 502 });
     }
+    // Record under the ballot's speaker_name (the same key the scheduled 8 PM
+    // send checks) so a manual send is not duplicated by the cron.
+    await recordDigestSent(meeting_id, speaker_name, member.email);
     return NextResponse.json({ ok: true, id: result.id, to: member.email, count: evaluations.length });
   } catch (error) {
     console.error('Failed to send speaker digest:', error);
