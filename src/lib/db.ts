@@ -93,6 +93,21 @@ export async function initializeDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
+
+  // Records which speaker digests have already been emailed, so the scheduled
+  // 8 PM send (and any manual resend) never double-sends to a speaker.
+  // UNIQUE(meeting_id, speaker_name) is the dedup key; ON DELETE CASCADE clears
+  // the log when the meeting is purged.
+  await sql`
+    CREATE TABLE IF NOT EXISTS digest_log (
+      id SERIAL PRIMARY KEY,
+      meeting_id INTEGER REFERENCES meetings(id) ON DELETE CASCADE,
+      speaker_name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (meeting_id, speaker_name)
+    )
+  `;
 }
 
 // Meeting operations
@@ -256,6 +271,31 @@ export async function getAllEvaluations() {
     ORDER BY e.created_at DESC
   `;
   return result.rows;
+}
+
+// ============ Speaker-digest send log (dedup) ============
+
+/** Has this speaker's digest for this meeting already been emailed? */
+export async function hasDigestBeenSent(meetingId: number, speakerName: string): Promise<boolean> {
+  const result = await sql`
+    SELECT 1 FROM digest_log
+    WHERE meeting_id = ${meetingId} AND speaker_name = ${speakerName}
+    LIMIT 1
+  `;
+  return result.rows.length > 0;
+}
+
+/**
+ * Record that a speaker's digest was sent. ON CONFLICT DO NOTHING makes it safe
+ * to call from both the scheduled send and manual resends — the
+ * UNIQUE(meeting_id, speaker_name) constraint is the single source of truth.
+ */
+export async function recordDigestSent(meetingId: number, speakerName: string, email: string) {
+  await sql`
+    INSERT INTO digest_log (meeting_id, speaker_name, email)
+    VALUES (${meetingId}, ${speakerName}, ${email})
+    ON CONFLICT (meeting_id, speaker_name) DO NOTHING
+  `;
 }
 
 // ============ Ah-Um Counter Report Operations ============

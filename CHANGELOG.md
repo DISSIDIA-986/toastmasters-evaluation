@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project uses semver.
 
+## [0.2.3] - 2026-05-27
+
+### Added
+- **Automatic speaker feedback at 8 PM** (Nelson's call: Option 2). After each
+  meeting, every speaker is emailed one consolidated digest of all their
+  feedback, sent automatically at 8 PM club time. A new `digest_log` table makes
+  it idempotent — re-runs, late ballots, and manual resends never double-send.
+  Only exact, unique roster matches are auto-sent; guests / ambiguous names are
+  left for the admin to send manually. Triggered by Vercel Cron (`0 2,3 * * *`)
+  with a local-time gate so the send stays at exactly 8 PM across daylight saving.
+
 ## [0.2.2] - 2026-05-27
 
 ### Changed
